@@ -11,10 +11,8 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.res.stringResource
 import androidx.navigation.NavController
 import androidx.navigation.compose.currentBackStackEntryAsState
-import tech.kaustubhdeshpande.dropnest.R
 
 @Composable
 fun DropNestBottomNavigation(
@@ -60,7 +58,7 @@ fun DropNestBottomNavigation(
                         }
                         // Avoid multiple copies of the same destination
                         launchSingleTop = true
-                        // Restore state when reselecting previously selected item
+                        // Restore state when re-selecting previously selected item
                         restoreState = true
                     }
                 }
