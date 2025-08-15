@@ -84,7 +84,7 @@ dependencies {
     implementation(libs.coil.compose)
 
     // RevenueCat
-    implementation(libs.revenuecat)
+//    implementation(libs.revenuecat)
 
     // Extended icons
     implementation(libs.androidx.material.icons.extended)
