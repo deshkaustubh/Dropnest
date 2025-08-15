@@ -23,11 +23,14 @@ fun DropNestNavHost(
         // Welcome screen
         composable(route = DropNestDestination.Welcome.route) {
             WelcomeScreen(
-                onGetStarted = {
+                onTimeout = {
                     navController.navigate(DropNestDestination.Vault.route) {
                         popUpTo(DropNestDestination.Welcome.route) { inclusive = true }
+                        launchSingleTop = true
+                        restoreState = true
                     }
-                }
+                },
+                delayMillis = 1500L,
             )
         }
 
