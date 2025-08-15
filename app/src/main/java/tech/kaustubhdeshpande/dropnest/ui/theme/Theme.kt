@@ -12,6 +12,94 @@ import androidx.compose.runtime.Immutable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 
+//private val lightScheme = lightColorScheme(
+//    primary = Color(0xFF294233),
+//    onPrimary = Color(0xFFFFFFFF),
+//    primaryContainer = Color(0xFF1C2E26),
+//    onPrimaryContainer = Color(0xFFFFFFFF),
+//
+//    secondary = Color(0xFF3B5E4A),
+//    onSecondary = Color(0xFFFFFFFF),
+//    secondaryContainer = Color(0xFF12211A),
+//    onSecondaryContainer = Color(0xFFFFFFFF),
+//
+//    tertiary = Color(0xFF33CC75),
+//    onTertiary = Color(0xFF12211A),
+//    tertiaryContainer = Color(0xFF33CC75), // Optional: same as tertiary
+//    onTertiaryContainer = Color(0xFF12211A),
+//
+//    error = Color(0xFFBA1A1A),
+//    onError = Color(0xFFFFFFFF),
+//    errorContainer = Color(0xFFFCD8D8),
+//    onErrorContainer = Color(0xFF5F0000),
+//
+//    background = Color(0xFF12211A),
+//    onBackground = Color(0xFFFFFFFF),
+//    surface = Color(0xFFFFFFFF),
+//    onSurface = Color(0xFF12211A),
+//    surfaceVariant = Color(0xFF1C2E26),
+//    onSurfaceVariant = Color(0xFF99C2AB),
+//
+//    outline = Color(0xFF3B5E4A),
+//    outlineVariant = Color(0xFF3B5E4A),
+//    scrim = Color(0xFF000000),
+//    inverseSurface = Color(0xFF294233),
+//    inverseOnSurface = Color(0xFFFFFFFF),
+//    inversePrimary = Color(0xFF33CC75),
+//
+//    surfaceDim = Color(0xFFEDEDED),
+//    surfaceBright = Color(0xFFFFFFFF),
+//    surfaceContainerLowest = Color(0xFFFFFFFF),
+//    surfaceContainerLow = Color(0xFFF5F5F5),
+//    surfaceContainer = Color(0xFFF0F0F0),
+//    surfaceContainerHigh = Color(0xFFEAEAEA),
+//    surfaceContainerHighest = Color(0xFFE4E4E4)
+//)
+//
+//private val darkScheme = darkColorScheme(
+//    primary = Color(0xFF33CC75),
+//    onPrimary = Color(0xFF12211A),
+//    primaryContainer = Color(0xFF294233),
+//    onPrimaryContainer = Color(0xFFFFFFFF),
+//
+//    secondary = Color(0xFF99C2AB),
+//    onSecondary = Color(0xFF12211A),
+//    secondaryContainer = Color(0xFF3B5E4A),
+//    onSecondaryContainer = Color(0xFFFFFFFF),
+//
+//    tertiary = Color(0xFF33CC75),
+//    onTertiary = Color(0xFF12211A),
+//    tertiaryContainer = Color(0xFF1C2E26),
+//    onTertiaryContainer = Color(0xFFFFFFFF),
+//
+//    error = Color(0xFFFFB4AB),
+//    onError = Color(0xFF690005),
+//    errorContainer = Color(0xFF93000A),
+//    onErrorContainer = Color(0xFFFFDAD6),
+//
+//    background = Color(0xFF12211A),
+//    onBackground = Color(0xFFFFFFFF),
+//    surface = Color(0xFF1C2E26),
+//    onSurface = Color(0xFF99C2AB),
+//    surfaceVariant = Color(0xFF294233),
+//    onSurfaceVariant = Color(0xFFFFFFFF),
+//
+//    outline = Color(0xFF3B5E4A),
+//    outlineVariant = Color(0xFF3B5E4A),
+//    scrim = Color(0xFF000000),
+//    inverseSurface = Color(0xFFFFFFFF),
+//    inverseOnSurface = Color(0xFF12211A),
+//    inversePrimary = Color(0xFF294233),
+//
+//    surfaceDim = Color(0xFF121212),
+//    surfaceBright = Color(0xFF2A2A2A),
+//    surfaceContainerLowest = Color(0xFF0F0F0F),
+//    surfaceContainerLow = Color(0xFF1D1D1D),
+//    surfaceContainer = Color(0xFF202020),
+//    surfaceContainerHigh = Color(0xFF2A2A2A),
+//    surfaceContainerHighest = Color(0xFF353535)
+//)
+
 private val lightScheme = lightColorScheme(
     primary = primaryLight,
     onPrimary = onPrimaryLight,
