@@ -23,109 +23,116 @@ fun DropNestNavHost(
     navController: NavHostController = rememberNavController(),
     startDestination: String = DropNestDestination.Welcome.route
 ) {
-    NavHost(
-        navController = navController,
-        startDestination = startDestination,
-        modifier = modifier
-    ) {
-        // Welcome screen
-        composable(route = DropNestDestination.Welcome.route) {
-            WelcomeScreen(
-                onTimeout = {
-                    navController.navigate(DropNestDestination.Home.route) {
-                        popUpTo(DropNestDestination.Welcome.route) { inclusive = true }
-                        launchSingleTop = true
-                        restoreState = true
-                    }
-                },
-                delayMillis = 1500L,
-            )
-        }
+    // Wrap everything in our SafeNavigationProvider
+    SafeNavigationProvider(navController) {
+        // Get reference to our safe navigation
+        val safeNavigation = LocalSafeNavigation.current
 
-        // Vault screen - main screen of the app
-        composable(route = DropNestDestination.Vault.route) {
-            VaultScreen(
-                onCreateDrop = {
-                    navController.navigate(DropNestDestination.CreateDrop.route)
-                },
-                onDropClick = { dropId ->
-                    navController.navigate(DropNestDestination.DropDetail.createRoute(dropId))
-                },
-                onSettingsClick = {
-                    navController.navigate(DropNestDestination.Settings.route)
-                }
-            )
-        }
-
-        // Home Screen - new main screen of the app
-        composable(route = DropNestDestination.Home.route) {
-            Log.d(TAG, "Navigating to Home screen")
-            val viewModel: HomeViewModelImpl = hiltViewModel()
-            HomeScreen(
-                viewModel = viewModel,
-                onCreateCategoryClick = {
-                    Log.d(TAG, "Navigating to Create Category screen")
-                    navController.navigate(DropNestDestination.CreateCategory.route)
-                },
-                onCategoryClick = { categoryId ->
-                    Log.d(TAG, "Navigating to Category Detail screen for category: $categoryId")
-                    navController.navigate(DropNestDestination.CategoryDetail.createRoute(categoryId))
-                }
-            )
-        }
-
-        // Create Category screen
-        composable(route = DropNestDestination.CreateCategory.route) {
-            CreateCategoryScreen(
-                onBackClick = {
-                    Log.d(TAG, "Navigating back from Create Category")
-                    navController.popBackStack()
-                },
-                onCategorySaved = {
-                    Log.d(TAG, "Category saved, navigating back")
-                    navController.popBackStack()
-                }
-            )
-        }
-
-        // Edit Category screen
-        composable(
-            route = DropNestDestination.EditCategory.route,
-            arguments = DropNestDestination.EditCategory.arguments
+        NavHost(
+            navController = navController,
+            startDestination = startDestination,
+            modifier = modifier
         ) {
-            CreateCategoryScreen(
-                onBackClick = {
-                    Log.d(TAG, "Navigating back from Edit Category")
-                    navController.popBackStack()
-                },
-                onCategorySaved = {
-                    Log.d(TAG, "Category updated, navigating back")
-                    navController.popBackStack()
-                }
-            )
-        }
+            // Welcome screen
+            composable(route = DropNestDestination.Welcome.route) {
+                WelcomeScreen(
+                    onTimeout = {
+                        // Use safe navigation instead of direct NavController
+                        safeNavigation.navigateTo(DropNestDestination.Home.route) {
+                            popUpTo(DropNestDestination.Welcome.route) { inclusive = true }
+                            launchSingleTop = true
+                            restoreState = true
+                        }
+                    },
+                    delayMillis = 1500L,
+                )
+            }
 
-        // Category Detail screen
-        composable(
-            route = DropNestDestination.CategoryDetail.route,
-            arguments = DropNestDestination.CategoryDetail.arguments
-        ) { backStackEntry ->
-            val categoryId = backStackEntry.arguments?.getString("categoryId") ?: ""
-            Log.d(TAG, "Navigating to Category Detail screen for category: $categoryId")
-            CategoryDetailScreen(
-                categoryId = categoryId,
-                onBackClick = {
-                    Log.d(TAG, "Navigating back from Category Detail")
-                    navController.popBackStack()
-                },
-                onSettingsClick = {
-                    // Navigate to EditCategory screen with current categoryId
-                    Log.d(TAG, "Navigating to Edit Category screen from Category Detail for category: $categoryId")
-                    navController.navigate(DropNestDestination.EditCategory.createRoute(categoryId))
-                }
-            )
-        }
+            // Vault screen - main screen of the app
+            composable(route = DropNestDestination.Vault.route) {
+                VaultScreen(
+                    onCreateDrop = {
+                        safeNavigation.navigateTo(DropNestDestination.CreateDrop.route)
+                    },
+                    onDropClick = { dropId ->
+                        safeNavigation.navigateTo(DropNestDestination.DropDetail.createRoute(dropId))
+                    },
+                    onSettingsClick = {
+                        safeNavigation.navigateTo(DropNestDestination.Settings.route)
+                    }
+                )
+            }
 
-        // Other routes will be implemented as we build those screens
+            // Home Screen - new main screen of the app
+            composable(route = DropNestDestination.Home.route) {
+                Log.d(TAG, "Navigating to Home screen")
+                val viewModel: HomeViewModelImpl = hiltViewModel()
+                HomeScreen(
+                    viewModel = viewModel,
+                    onCreateCategoryClick = {
+                        Log.d(TAG, "Navigating to Create Category screen")
+                        safeNavigation.navigateTo(DropNestDestination.CreateCategory.route)
+                    },
+                    onCategoryClick = { categoryId ->
+                        Log.d(TAG, "Navigating to Category Detail screen for category: $categoryId")
+                        safeNavigation.navigateTo(DropNestDestination.CategoryDetail.createRoute(categoryId))
+                    }
+                )
+            }
+
+            // Create Category screen
+            composable(route = DropNestDestination.CreateCategory.route) {
+                CreateCategoryScreen(
+                    onBackClick = {
+                        Log.d(TAG, "Navigating back from Create Category")
+                        safeNavigation.popBackStack()
+                    },
+                    onCategorySaved = {
+                        Log.d(TAG, "Category saved, navigating back")
+                        safeNavigation.popBackStack()
+                    }
+                )
+            }
+
+            // Edit Category screen
+            composable(
+                route = DropNestDestination.EditCategory.route,
+                arguments = DropNestDestination.EditCategory.arguments
+            ) {
+                CreateCategoryScreen(
+                    onBackClick = {
+                        Log.d(TAG, "Navigating back from Edit Category")
+                        safeNavigation.popBackStack()
+                    },
+                    onCategorySaved = {
+                        Log.d(TAG, "Category updated, navigating back")
+                        safeNavigation.popBackStack()
+                    }
+                )
+            }
+
+            // Category Detail screen
+            composable(
+                route = DropNestDestination.CategoryDetail.route,
+                arguments = DropNestDestination.CategoryDetail.arguments
+            ) { backStackEntry ->
+                val categoryId = backStackEntry.arguments?.getString("categoryId") ?: ""
+                Log.d(TAG, "Navigating to Category Detail screen for category: $categoryId")
+                CategoryDetailScreen(
+                    categoryId = categoryId,
+                    onBackClick = {
+                        Log.d(TAG, "Navigating back from Category Detail")
+                        safeNavigation.popBackStack()
+                    },
+                    onSettingsClick = {
+                        // Navigate to EditCategory screen with current categoryId
+                        Log.d(TAG, "Navigating to Edit Category screen from Category Detail for category: $categoryId")
+                        safeNavigation.navigateTo(DropNestDestination.EditCategory.createRoute(categoryId))
+                    }
+                )
+            }
+
+            // Other routes will be implemented as we build those screens
+        }
     }
 }
