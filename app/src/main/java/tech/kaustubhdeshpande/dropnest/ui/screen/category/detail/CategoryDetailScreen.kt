@@ -208,7 +208,6 @@ fun CategoryDetailScreen(
                     onAttachClick = { showAttachSheet = true },
                     modifier = Modifier
                         .fillMaxWidth()
-                        .windowInsetsPadding(WindowInsets.navigationBars)  // Apply navigation bar insets
                 )
             }
 
