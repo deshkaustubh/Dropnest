@@ -1,31 +1,39 @@
 package tech.kaustubhdeshpande.dropnest.ui.screen.home
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.outlined.*
-import androidx.compose.material3.*
+import androidx.compose.material.icons.outlined.Bookmark
+import androidx.compose.material.icons.outlined.Image
+import androidx.compose.material.icons.outlined.Notes
+import androidx.compose.material.icons.outlined.PictureAsPdf
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
-import tech.kaustubhdeshpande.dropnest.R
 import tech.kaustubhdeshpande.dropnest.ui.theme.DropnestTheme
 
 @Composable
@@ -41,7 +49,7 @@ fun HomeScreen(
         containerColor = MaterialTheme.colorScheme.background,
         floatingActionButton = {
             FloatingActionButton(
-                onClick = { viewModel.onAddCategoryClick() },
+                onClick = { onCreateCategoryClick() },
                 containerColor = MaterialTheme.colorScheme.tertiary,
                 shape = RoundedCornerShape(4.dp),
                 modifier = Modifier.size(56.dp)
@@ -59,6 +67,7 @@ fun HomeScreen(
                 .padding(paddingValues)
                 .fillMaxSize()
                 .background(MaterialTheme.colorScheme.background)
+                .verticalScroll(rememberScrollState())
                 .padding(16.dp)
         ) {
             // Header section
@@ -83,6 +92,9 @@ fun HomeScreen(
                 onCategoryClick = onCategoryClick,
                 onCreateCategoryClick = onCreateCategoryClick
             )
+
+            // Add space at the bottom to prevent FAB from covering content
+            Spacer(modifier = Modifier.height(80.dp))
         }
     }
 }
@@ -199,166 +211,10 @@ fun CategoryCard(
     }
 }
 
-@Composable
-fun CustomCategoriesSection(
-    categories: List<Category>,
-    isLoading: Boolean,
-    onCategoryClick: (String) -> Unit,
-    onCreateCategoryClick: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    Column(
-        modifier = modifier.fillMaxWidth()
-    ) {
-        Text(
-            text = "Custom Categories",
-            style = MaterialTheme.typography.headlineMedium,
-            color = MaterialTheme.colorScheme.onBackground,
-            modifier = Modifier.align(Alignment.Start)
-        )
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        if (isLoading) {
-            // Show loading indicator
-            Box(
-                contentAlignment = Alignment.Center,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(200.dp)
-            ) {
-                CircularProgressIndicator(color = MaterialTheme.colorScheme.tertiary)
-            }
-        } else if (categories.isEmpty()) {
-            // Show empty state
-            EmptyCustomCategoriesState(onCreateCategoryClick)
-        } else {
-            // Show grid of custom categories
-            LazyVerticalGrid(
-                columns = GridCells.Fixed(2),
-                horizontalArrangement = Arrangement.spacedBy(16.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                items(categories) { category ->
-                    CustomCategoryCard(
-                        category = category,
-                        onClick = { onCategoryClick(category.id) }
-                    )
-                }
-            }
-        }
-    }
-}
-
-@Composable
-fun EmptyCustomCategoriesState(onCreateCategoryClick: () -> Unit) {
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        // Placeholder image
-        Image(
-            painter = painterResource(id = R.drawable.empty_category_placeholder),
-            contentDescription = "Empty categories placeholder",
-            contentScale = ContentScale.Crop,
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(200.dp)
-                .clip(RoundedCornerShape(16.dp))
-        )
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        Text(
-            text = "No categories yet",
-            style = MaterialTheme.typography.titleLarge,
-            color = MaterialTheme.colorScheme.onBackground
-        )
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        Text(
-            text = "Create one to start organizing.",
-            style = MaterialTheme.typography.bodyLarge,
-            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
-        )
-
-        Spacer(modifier = Modifier.height(24.dp))
-
-        Button(
-            onClick = onCreateCategoryClick,
-            colors = ButtonDefaults.buttonColors(
-                containerColor = MaterialTheme.colorScheme.secondaryContainer
-            ),
-            shape = RoundedCornerShape(12.dp),
-            modifier = Modifier
-                .height(56.dp)
-                .width(240.dp)
-        ) {
-            Text(
-                text = "Create Category",
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onSecondaryContainer
-            )
-        }
-    }
-}
-
-@Composable
-fun CustomCategoryCard(
-    category: Category,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    // Convert the color Long to Color
-    val categoryColor = Color(category.color)
-
-    Surface(
-        onClick = onClick,
-        shape = RoundedCornerShape(12.dp),
-        color = MaterialTheme.colorScheme.surfaceVariant,
-        modifier = modifier
-            .height(120.dp)
-            .border(
-                width = 1.dp,
-                color = categoryColor,
-                shape = RoundedCornerShape(12.dp)
-            )
-    ) {
-        Column(
-            horizontalAlignment = Alignment.Start,
-            verticalArrangement = Arrangement.Center,
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(16.dp)
-        ) {
-            // For a real implementation, you might want to dynamically load icons
-            // For now we'll just use a default icon
-            Icon(
-                imageVector = Icons.Outlined.Folder,
-                contentDescription = category.name,
-                tint = categoryColor,
-                modifier = Modifier.size(28.dp)
-            )
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            Text(
-                text = category.name,
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
-    }
-}
-
 @Preview(showBackground = true)
 @Composable
 fun HomeScreenPreview() {
-    // Create the ViewModel outside the composable function
     val viewModel = HomeViewModelPreviewParameterProvider.createEmptyViewModel()
-
     DropnestTheme(darkTheme = true) {
         HomeScreen(viewModel = viewModel)
     }
@@ -367,9 +223,7 @@ fun HomeScreenPreview() {
 @Preview(showBackground = true)
 @Composable
 fun HomeScreenWithCategoriesPreview() {
-    // Create the ViewModel outside the composable function
     val viewModel = HomeViewModelPreviewParameterProvider.createViewModelWithCategories()
-
     DropnestTheme(darkTheme = true) {
         HomeScreen(viewModel = viewModel)
     }

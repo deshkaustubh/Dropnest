@@ -1,15 +1,21 @@
 package tech.kaustubhdeshpande.dropnest.ui.screen.home
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import tech.kaustubhdeshpande.dropnest.domain.repository.CategoryRepository
 import javax.inject.Inject
 
-// Make this an open class so PreviewHomeViewModel can extend it
+private const val TAG = "HomeViewModel"
+
+// Base abstract class for HomeViewModel
 abstract class HomeViewModel : ViewModel() {
     abstract val uiState: StateFlow<HomeScreenState>
 
@@ -23,7 +29,7 @@ abstract class HomeViewModel : ViewModel() {
 // The real implementation used in the app
 @HiltViewModel
 class HomeViewModelImpl @Inject constructor(
-    // Your dependencies here
+    private val categoryRepository: CategoryRepository
 ) : HomeViewModel() {
     private val _uiState = MutableStateFlow(HomeScreenState())
     override val uiState: StateFlow<HomeScreenState> = _uiState.asStateFlow()
@@ -34,13 +40,34 @@ class HomeViewModelImpl @Inject constructor(
 
     private fun loadCategories() {
         viewModelScope.launch {
-            // Simulate loading from repository
-            _uiState.value = HomeScreenState(isLoading = false, customCategories = emptyList())
+            try {
+                Log.d(TAG, "Loading categories...")
+                _uiState.update { it.copy(isLoading = true) }
+
+                categoryRepository.getCustomCategories().collectLatest { categories ->
+                    Log.d(TAG, "Received ${categories.size} categories")
+                    _uiState.update { state ->
+                        state.copy(
+                            customCategories = categories,
+                            isLoading = false
+                        )
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error loading categories", e)
+                _uiState.update { it.copy(isLoading = false) }
+            }
         }
     }
 
+    // Add refresh function
+    fun refreshCategories() {
+        loadCategories()
+    }
+
     override fun onCategoryClick(categoryId: String) {
-        // Navigate to category detail or perform action
+        // This will be handled by the navigation in the composable
+        Log.d(TAG, "Category clicked: $categoryId")
     }
 
     override fun onDefaultCategoryClick(categoryType: DefaultCategoryType) {
@@ -54,29 +81,12 @@ class HomeViewModelImpl @Inject constructor(
     }
 
     override fun onAddCategoryClick() {
-        // Navigate to add category screen or show dialog
+        // This will be handled in the HomeScreen
+        Log.d(TAG, "Add category button clicked")
     }
 
     override fun onCreateCategoryClick() {
-        // Navigate to create category screen
+        // Navigation will be handled in the composable
+        Log.d(TAG, "Create category clicked")
     }
-}
-
-data class HomeScreenState(
-    val isLoading: Boolean = true,
-    val customCategories: List<Category> = emptyList()
-)
-
-data class Category(
-    val id: String,
-    val name: String,
-    val color: Long,
-    val icon: String? = null
-)
-
-enum class DefaultCategoryType {
-    SAVED_LINKS,
-    NOTES,
-    IMAGES,
-    PDFS
 }

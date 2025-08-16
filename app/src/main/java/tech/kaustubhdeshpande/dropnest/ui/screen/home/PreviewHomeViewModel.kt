@@ -3,6 +3,7 @@ package tech.kaustubhdeshpande.dropnest.ui.screen.home
 import androidx.lifecycle.ViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import tech.kaustubhdeshpande.dropnest.domain.model.Category
 
 class PreviewHomeViewModel : HomeViewModel() {
     private val _uiState = MutableStateFlow(HomeScreenState(isLoading = false, customCategories = emptyList()))

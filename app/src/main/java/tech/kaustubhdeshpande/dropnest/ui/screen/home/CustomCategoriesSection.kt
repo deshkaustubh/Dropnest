@@ -1,13 +1,13 @@
 package tech.kaustubhdeshpande.dropnest.ui.screen.home
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
+import android.util.Log
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -18,18 +18,17 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.outlined.Folder
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -37,6 +36,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import tech.kaustubhdeshpande.dropnest.domain.model.Category
 import tech.kaustubhdeshpande.dropnest.ui.component.availableCategoryIcons
+
+private const val TAG = "CustomCategoriesSection"
 
 @Composable
 fun CustomCategoriesSection(
@@ -48,11 +49,10 @@ fun CustomCategoriesSection(
 ) {
     Column(modifier = modifier.fillMaxWidth()) {
         Text(
-            text = "Categories",
-            style = MaterialTheme.typography.titleLarge,
-            fontWeight = FontWeight.Bold,
+            text = "Custom Categories",
+            style = MaterialTheme.typography.headlineMedium,
             color = MaterialTheme.colorScheme.onBackground,
-            modifier = Modifier.padding(horizontal = 16.dp)
+            modifier = Modifier.padding(horizontal = 4.dp)
         )
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -64,27 +64,41 @@ fun CustomCategoriesSection(
                     .height(200.dp),
                 contentAlignment = Alignment.Center
             ) {
-                CircularProgressIndicator()
+                CircularProgressIndicator(color = MaterialTheme.colorScheme.tertiary)
             }
         } else if (categories.isEmpty()) {
+            Log.d(TAG, "No categories to display")
             EmptyCategoriesState(onCreateCategoryClick)
         } else {
+            Log.d(TAG, "Displaying ${categories.size} categories")
             LazyVerticalGrid(
                 columns = GridCells.Fixed(2),
-                contentPadding = PaddingValues(16.dp),
+                contentPadding = PaddingValues(4.dp),
                 horizontalArrangement = Arrangement.spacedBy(16.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp),
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(((categories.size + 1) / 2 * 110).dp.coerceAtMost(400.dp))
             ) {
                 items(categories) { category ->
-                    CategoryCard(
+                    CustomCategoryCard(
                         category = category,
-                        onClick = { onCategoryClick(category.id) }
+                        onClick = {
+                            Log.d(TAG, "Category clicked: ${category.id}")
+                            onCategoryClick(category.id)
+                        },
+                        modifier = Modifier.fillMaxWidth()
                     )
                 }
 
                 item {
-                    CreateCategoryCard(onClick = onCreateCategoryClick)
+                    AddCategoryCard(
+                        onClick = {
+                            Log.d(TAG, "Create category card clicked")
+                            onCreateCategoryClick()
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    )
                 }
             }
         }
@@ -92,54 +106,54 @@ fun CustomCategoriesSection(
 }
 
 @Composable
-fun CategoryCard(
+fun CustomCategoryCard(
     category: Category,
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Card(
+    // Parse color from hex
+    val categoryColor = try {
+        Color(android.graphics.Color.parseColor(category.colorHex))
+    } catch (e: Exception) {
+        MaterialTheme.colorScheme.primary
+    }
+
+    Surface(
+        onClick = onClick,
+        shape = RoundedCornerShape(12.dp),
+        color = MaterialTheme.colorScheme.surfaceVariant,
         modifier = modifier
-            .fillMaxWidth()
-            .aspectRatio(1f)
-            .clip(RoundedCornerShape(16.dp))
-            .clickable(onClick = onClick),
-        colors = CardDefaults.cardColors(
-            containerColor = Color(android.graphics.Color.parseColor(category.colorHex))
-        )
+            .height(90.dp)
+            .border(
+                width = 1.dp,
+                color = categoryColor, // Use category color for border
+                shape = RoundedCornerShape(12.dp)
+            )
     ) {
         Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
+            horizontalAlignment = Alignment.Start,
             verticalArrangement = Arrangement.Center,
             modifier = Modifier
-                .fillMaxWidth()
+                .fillMaxSize()
                 .padding(16.dp)
         ) {
             // Find the icon by name
             val icon = availableCategoryIcons.find { it.contentDescription == category.emoji }?.icon
+                ?: Icons.Outlined.Folder
 
-            if (icon != null) {
-                Icon(
-                    imageVector = icon,
-                    contentDescription = category.name,
-                    tint = getContrastColor(Color(android.graphics.Color.parseColor(category.colorHex))),
-                    modifier = Modifier.size(48.dp)
-                )
-            } else {
-                // Fallback if icon not found, display emoji
-                Text(
-                    text = category.emoji,
-                    style = MaterialTheme.typography.headlineMedium,
-                    textAlign = TextAlign.Center
-                )
-            }
+            Icon(
+                imageVector = icon,
+                contentDescription = category.name,
+                tint = categoryColor, // Use category color for icon
+                modifier = Modifier.size(28.dp)
+            )
 
             Spacer(modifier = Modifier.height(8.dp))
 
             Text(
                 text = category.name,
                 style = MaterialTheme.typography.titleMedium,
-                color = getContrastColor(Color(android.graphics.Color.parseColor(category.colorHex))),
-                textAlign = TextAlign.Center,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
@@ -148,41 +162,44 @@ fun CategoryCard(
 }
 
 @Composable
-fun CreateCategoryCard(
+fun AddCategoryCard(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Card(
+    val accentColor = MaterialTheme.colorScheme.tertiary
+
+    Surface(
+        onClick = onClick,
+        shape = RoundedCornerShape(12.dp),
+        color = MaterialTheme.colorScheme.surfaceVariant,
         modifier = modifier
-            .fillMaxWidth()
-            .aspectRatio(1f)
-            .clip(RoundedCornerShape(16.dp))
-            .clickable(onClick = onClick),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant
-        )
+            .height(90.dp)
+            .border(
+                width = 1.dp,
+                color = accentColor,
+                shape = RoundedCornerShape(12.dp)
+            )
     ) {
         Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
+            horizontalAlignment = Alignment.Start,
             verticalArrangement = Arrangement.Center,
             modifier = Modifier
-                .fillMaxWidth()
+                .fillMaxSize()
                 .padding(16.dp)
         ) {
             Icon(
                 imageVector = Icons.Default.Add,
                 contentDescription = "Create category",
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.size(48.dp)
+                tint = accentColor,
+                modifier = Modifier.size(28.dp)
             )
 
             Spacer(modifier = Modifier.height(8.dp))
 
             Text(
-                text = "Create Category",
+                text = "Add Category",
                 style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                textAlign = TextAlign.Center
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
     }
@@ -199,7 +216,7 @@ fun EmptyCategoriesState(onCreateCategoryClick: () -> Unit) {
     ) {
         Text(
             text = "No categories yet",
-            style = MaterialTheme.typography.titleMedium,
+            style = MaterialTheme.typography.titleLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center
         )
@@ -218,8 +235,9 @@ fun EmptyCategoriesState(onCreateCategoryClick: () -> Unit) {
         Button(
             onClick = onCreateCategoryClick,
             colors = ButtonDefaults.buttonColors(
-                containerColor = MaterialTheme.colorScheme.primary
-            )
+                containerColor = MaterialTheme.colorScheme.tertiary
+            ),
+            shape = RoundedCornerShape(12.dp)
         ) {
             Icon(
                 imageVector = Icons.Default.Add,
@@ -229,13 +247,10 @@ fun EmptyCategoriesState(onCreateCategoryClick: () -> Unit) {
 
             Spacer(modifier = Modifier.size(8.dp))
 
-            Text(text = "Create Category")
+            Text(
+                text = "Create Category",
+                fontWeight = FontWeight.Medium
+            )
         }
     }
-}
-
-// Helper function for contrast text color
-fun getContrastColor(backgroundColor: Color): Color {
-    val luminance = (0.299 * backgroundColor.red + 0.587 * backgroundColor.green + 0.114 * backgroundColor.blue)
-    return if (luminance > 0.5f) Color.Black else Color.White
 }

@@ -1,5 +1,6 @@
 package tech.kaustubhdeshpande.dropnest.presentation.navigation
 
+import android.util.Log
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -7,12 +8,13 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import tech.kaustubhdeshpande.dropnest.domain.model.Drop
 import tech.kaustubhdeshpande.dropnest.ui.screen.category.CreateCategoryScreen
 import tech.kaustubhdeshpande.dropnest.ui.screen.home.HomeScreen
 import tech.kaustubhdeshpande.dropnest.ui.screen.home.HomeViewModelImpl
 import tech.kaustubhdeshpande.dropnest.ui.screen.vault.VaultScreen
 import tech.kaustubhdeshpande.dropnest.ui.screen.welcome.WelcomeScreen
+
+private const val TAG = "DropNestNavHost"
 
 @Composable
 fun DropNestNavHost(
@@ -56,13 +58,16 @@ fun DropNestNavHost(
 
         // Home Screen - new main screen of the app
         composable(route = DropNestDestination.Home.route) {
+            Log.d(TAG, "Navigating to Home screen")
             val viewModel: HomeViewModelImpl = hiltViewModel()
             HomeScreen(
                 viewModel = viewModel,
                 onCreateCategoryClick = {
+                    Log.d(TAG, "Navigating to Create Category screen")
                     navController.navigate(DropNestDestination.CreateCategory.route)
                 },
                 onCategoryClick = { categoryId ->
+                    Log.d(TAG, "Navigating to Edit Category screen for category: $categoryId")
                     navController.navigate(DropNestDestination.EditCategory.createRoute(categoryId))
                 }
             )
@@ -72,9 +77,11 @@ fun DropNestNavHost(
         composable(route = DropNestDestination.CreateCategory.route) {
             CreateCategoryScreen(
                 onBackClick = {
+                    Log.d(TAG, "Navigating back from Create Category")
                     navController.popBackStack()
                 },
                 onCategorySaved = {
+                    Log.d(TAG, "Category saved, navigating back")
                     navController.popBackStack()
                 }
             )
@@ -87,9 +94,11 @@ fun DropNestNavHost(
         ) {
             CreateCategoryScreen(
                 onBackClick = {
+                    Log.d(TAG, "Navigating back from Edit Category")
                     navController.popBackStack()
                 },
                 onCategorySaved = {
+                    Log.d(TAG, "Category updated, navigating back")
                     navController.popBackStack()
                 }
             )
