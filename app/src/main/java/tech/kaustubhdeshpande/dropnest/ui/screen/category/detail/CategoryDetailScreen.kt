@@ -7,6 +7,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.imePadding
@@ -36,7 +37,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import tech.kaustubhdeshpande.dropnest.presentation.navigation.DropNestDestination
 import tech.kaustubhdeshpande.dropnest.ui.screen.category.detail.components.AttachMediaBottomSheet
 import tech.kaustubhdeshpande.dropnest.ui.screen.category.detail.components.DropInputField
 import tech.kaustubhdeshpande.dropnest.ui.screen.category.detail.components.DropItem
@@ -47,7 +47,7 @@ import tech.kaustubhdeshpande.dropnest.ui.screen.category.detail.components.Drop
 fun CategoryDetailScreen(
     categoryId: String,
     onBackClick: () -> Unit,
-    onSettingsClick: () -> Unit, // This will now navigate to Edit Category screen
+    onSettingsClick: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: CategoryDetailViewModel = hiltViewModel()
 ) {
@@ -62,10 +62,16 @@ fun CategoryDetailScreen(
         viewModel.loadDrops(categoryId)
     }
 
-    // Auto-scroll to bottom when new items are added
-    LaunchedEffect(uiState.drops.size) {
-        if (uiState.drops.isNotEmpty()) {
-            listState.animateScrollToItem(uiState.drops.size - 1)
+    // Sort drops chronologically (oldest first)
+    val sortedDrops = remember(uiState.drops) {
+        uiState.drops.sortedBy { it.timestamp }
+    }
+
+    // Auto-scroll to bottom (newest messages) when data is loaded or new messages are added
+    LaunchedEffect(sortedDrops.size) {
+        if (sortedDrops.isNotEmpty()) {
+            // Scroll to bottom (newest messages)
+            listState.scrollToItem(sortedDrops.size - 1)
         }
     }
 
@@ -100,7 +106,7 @@ fun CategoryDetailScreen(
                     }
                 },
                 actions = {
-                    // Settings icon now used to edit the category
+                    // Settings icon used to edit the category
                     IconButton(onClick = onSettingsClick) {
                         Icon(
                             imageVector = Icons.Default.Settings,
@@ -132,14 +138,14 @@ fun CategoryDetailScreen(
                     modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
                 )
 
-                // Chat messages list
+                // Chat messages list - chronological order (oldest at top, newest at bottom)
                 LazyColumn(
                     state = listState,
                     contentPadding = PaddingValues(16.dp),
                     modifier = Modifier.weight(1f)
                 ) {
                     // Welcome messages (only show if no drops yet)
-                    if (uiState.drops.isEmpty()) {
+                    if (sortedDrops.isEmpty()) {
                         item {
                             DropNestMessage(
                                 text = "Welcome to your ${uiState.category?.name ?: ""} vault!"
@@ -160,11 +166,16 @@ fun CategoryDetailScreen(
                                 text = "Start adding content to build your collection. Everything is searchable and easy to find later."
                             )
                         }
+                    } else {
+                        // Display drops in chronological order (oldest first)
+                        items(sortedDrops) { drop ->
+                            DropItem(drop = drop)
+                        }
                     }
 
-                    // User-added drops
-                    items(uiState.drops) { drop ->
-                        DropItem(drop = drop)
+                    // Add some space at the bottom for better UX
+                    item {
+                        Spacer(modifier = Modifier.padding(bottom = 8.dp))
                     }
                 }
 
@@ -172,7 +183,10 @@ fun CategoryDetailScreen(
                 DropInputField(
                     text = uiState.inputText,
                     onTextChange = { viewModel.updateInputText(it) },
-                    onSendClick = { viewModel.sendDrop() },
+                    onSendClick = {
+                        viewModel.sendDrop()
+                        // When a message is sent, scroll to the bottom to see it
+                    },
                     onAttachClick = { showAttachSheet = true },
                     modifier = Modifier
                         .fillMaxWidth()
