@@ -11,9 +11,10 @@ data class Drop(
     val categoryId: String,      // Associated category
     val timestamp: Long = System.currentTimeMillis(),
     val isPinned: Boolean = false,
-    val tags: List<String> = emptyList()
+    val tags: List<String> = emptyList(),
+    val mimeType: String? = null // Added MIME type field for better file handling
 ) {
     val isMedia: Boolean
-        get() = type == DropType.IMAGE || type == DropType.PDF ||
+        get() = type == DropType.IMAGE || type == DropType.DOCUMENT ||
                 type == DropType.VIDEO || type == DropType.AUDIO
 }

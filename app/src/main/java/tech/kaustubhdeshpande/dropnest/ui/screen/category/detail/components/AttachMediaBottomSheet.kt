@@ -1,7 +1,5 @@
 package tech.kaustubhdeshpande.dropnest.ui.screen.category.detail.components
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -17,85 +15,105 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 
 @Composable
 fun AttachMediaBottomSheet(
     categoryName: String,
     onDismiss: () -> Unit,
     onImageClick: () -> Unit,
-    onPdfClick: () -> Unit
+    onDocumentClick: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
-    Dialog(onDismissRequest = onDismiss) {
+    // Define colors to match the original design
+    val backgroundColor = Color(0xFF131B17) // Very dark green/black
+    val buttonColor = Color(0xFF8CE3B0)     // Light mint green
+    val textColor = Color.White
+    val buttonTextColor = Color(0xFF0A1F13) // Dark green/black for button text
+
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(
+            dismissOnBackPress = true,
+            dismissOnClickOutside = true,
+            usePlatformDefaultWidth = false
+        )
+    ) {
         Surface(
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp),
-            color = MaterialTheme.colorScheme.surface
+            modifier = modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(topStart = 12.dp, topEnd = 12.dp),
+            color = backgroundColor
         ) {
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 modifier = Modifier
+                    .padding(horizontal = 24.dp, vertical = 16.dp)
                     .fillMaxWidth()
-                    .padding(24.dp)
             ) {
-                // Drag handle
-                Box(
+                // Handle
+                Surface(
                     modifier = Modifier
-                        .width(40.dp)
                         .height(4.dp)
-                        .background(
-                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f),
-                            shape = RoundedCornerShape(2.dp)
-                        )
-                )
+                        .width(40.dp),
+                    shape = RoundedCornerShape(2.dp),
+                    color = Color.Gray.copy(alpha = 0.5f)
+                ) {}
 
                 Spacer(modifier = Modifier.height(24.dp))
 
                 Text(
                     text = "Attach Media",
-                    style = MaterialTheme.typography.titleLarge,
-                    color = MaterialTheme.colorScheme.onSurface
+                    style = MaterialTheme.typography.headlineMedium,
+                    color = textColor
                 )
 
                 Spacer(modifier = Modifier.height(16.dp))
 
                 Text(
-                    text = "Drop an image or PDF into your '$categoryName' vault.",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    text = "Drop an image or document into your '$categoryName' vault.",
+                    textAlign = TextAlign.Center,
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = textColor.copy(alpha = 0.8f)
                 )
 
-                Spacer(modifier = Modifier.height(24.dp))
+                Spacer(modifier = Modifier.height(32.dp))
 
-                // Upload Image Button
+                // Upload Image Button - with less rounded corners to match original design
                 Button(
                     onClick = onImageClick,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(56.dp),
+                    modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(8.dp),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.primary
+                        containerColor = buttonColor,
+                        contentColor = buttonTextColor
                     )
                 ) {
-                    Text("Upload Image")
+                    Text(
+                        text = "Upload Image",
+                        style = MaterialTheme.typography.titleMedium
+                    )
                 }
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Upload PDF Button
+                // Upload Document Button
                 Button(
-                    onClick = onPdfClick,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(56.dp),
+                    onClick = onDocumentClick,
+                    modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(8.dp),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.secondary
+                        containerColor = buttonColor,
+                        contentColor = buttonTextColor
                     )
                 ) {
-                    Text("Upload PDF")
+                    Text(
+                        text = "Upload Document",
+                        style = MaterialTheme.typography.titleMedium
+                    )
                 }
 
                 Spacer(modifier = Modifier.height(16.dp))

@@ -1,5 +1,6 @@
 package tech.kaustubhdeshpande.dropnest.ui.screen.category.detail
 
+import android.content.Intent
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -14,9 +15,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.windowInsetsPadding
-import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -68,6 +68,40 @@ fun CategoryDetailScreen(
     // State for the selected image for preview
     var selectedImageDrop by remember { mutableStateOf<Drop?>(null) }
 
+    // Define document MIME types as an array for OpenDocument
+    val documentMimeTypes = arrayOf(
+        "application/pdf",
+        "application/msword",
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        "application/vnd.ms-excel",
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        "application/vnd.ms-powerpoint",
+        "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+        "text/plain",
+        "application/rtf",
+        "application/vnd.oasis.opendocument.text",
+        "application/vnd.oasis.opendocument.spreadsheet"
+    )
+
+    // Document picker using OpenDocument which accepts an array of MIME types
+    val documentPicker = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocument()
+    ) { uri: Uri? ->
+        uri?.let {
+            // Request persistent permissions for the URI
+            try {
+                context.contentResolver.takePersistableUriPermission(
+                    uri,
+                    Intent.FLAG_GRANT_READ_URI_PERMISSION
+                )
+            } catch (e: Exception) {
+                // Ignore if we can't get persistable permission
+            }
+
+            viewModel.saveDocumentDrop(it.toString())
+        }
+    }
+
     // Launch effect to load category and drops
     LaunchedEffect(categoryId) {
         viewModel.loadCategory(categoryId)
@@ -93,15 +127,6 @@ fun CategoryDetailScreen(
     ) { uri: Uri? ->
         uri?.let {
             viewModel.saveImageDrop(it.toString())
-        }
-    }
-
-    // PDF picker
-    val pdfPicker = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.GetContent()
-    ) { uri: Uri? ->
-        uri?.let {
-            viewModel.savePdfDrop(it.toString())
         }
     }
 
@@ -178,7 +203,7 @@ fun CategoryDetailScreen(
                         item {
                             DropNestMessage(
                                 text = "This is your personal space for collecting and organizing content.\n\n" +
-                                        "• Use the attachment icon to add images and PDFs\n" +
+                                        "• Use the attachment icon to add images and documents\n" +
                                         "• Type or paste links and notes directly\n" +
                                         "• Your content stays organized in this category"
                             )
@@ -225,7 +250,7 @@ fun CategoryDetailScreen(
                 )
             }
 
-            // Attach media bottom sheet
+            // Update the AttachMediaBottomSheet call
             if (showAttachSheet) {
                 AttachMediaBottomSheet(
                     categoryName = uiState.category?.name ?: "",
@@ -234,8 +259,9 @@ fun CategoryDetailScreen(
                         imagePicker.launch("image/*")
                         showAttachSheet = false
                     },
-                    onPdfClick = {
-                        pdfPicker.launch("application/pdf")
+                    onDocumentClick = {
+                        // Launch document picker with the array of MIME types
+                        documentPicker.launch(documentMimeTypes)
                         showAttachSheet = false
                     }
                 )

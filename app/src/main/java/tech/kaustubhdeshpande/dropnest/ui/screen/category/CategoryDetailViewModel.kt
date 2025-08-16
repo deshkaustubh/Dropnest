@@ -87,7 +87,8 @@ class CategoryDetailViewModel @Inject constructor(
             categoryId = categoryId,
             timestamp = System.currentTimeMillis(),
             isPinned = false,
-            tags = emptyList()
+            tags = emptyList(),
+            mimeType = if (isUrl) "text/uri-list" else "text/plain"
         )
 
         saveDrop(drop)
@@ -121,6 +122,7 @@ class CategoryDetailViewModel @Inject constructor(
                 }
 
                 val sourceUri = Uri.parse(sourceUriString)
+                val mimeType = fileManager.getMimeType(sourceUri)
 
                 // Save the file to app storage
                 val savedFilePath = fileManager.saveFileToAppStorage(sourceUri, "images")
@@ -135,7 +137,8 @@ class CategoryDetailViewModel @Inject constructor(
                         categoryId = categoryId,
                         timestamp = System.currentTimeMillis(),
                         isPinned = false,
-                        tags = emptyList()
+                        tags = emptyList(),
+                        mimeType = mimeType
                     )
 
                     Log.d(TAG, "Created image drop with ID: ${drop.id}, path: $savedFilePath")
@@ -150,42 +153,49 @@ class CategoryDetailViewModel @Inject constructor(
     }
 
     fun savePdfDrop(sourceUriString: String) {
+        saveDocumentDrop(sourceUriString) // Redirect to more general document handler
+    }
+
+    fun saveDocumentDrop(sourceUriString: String) {
         viewModelScope.launch {
             try {
-                Log.d(TAG, "Saving PDF from URI: $sourceUriString")
+                Log.d(TAG, "Saving document from URI: $sourceUriString")
                 val categoryId = _uiState.value.category?.id ?: run {
-                    Log.e(TAG, "Cannot save PDF: Category ID is null")
+                    Log.e(TAG, "Cannot save document: Category ID is null")
                     return@launch
                 }
 
                 val sourceUri = Uri.parse(sourceUriString)
 
-                // Get the filename first
-                val fileName = fileManager.getFileName(sourceUri)
+                // Get file metadata
+                val mimeType = fileManager.getMimeType(sourceUri)
+                val fileName = fileManager.getFileName(sourceUri) ?: "Document"
+                val documentType = fileManager.getDocumentTypeName(mimeType)
 
-                // Save the file to app storage
-                val savedFilePath = fileManager.saveFileToAppStorage(sourceUri, "pdfs")
+                // Save the file to app storage in "documents" directory
+                val savedFilePath = fileManager.saveFileToAppStorage(sourceUri, "documents")
 
                 if (savedFilePath != null) {
                     val drop = Drop(
                         id = UUID.randomUUID().toString(),
-                        type = DropType.PDF,
+                        type = DropType.DOCUMENT,
                         text = null,
                         title = fileName,
-                        uri = savedFilePath, // Use the saved file path
+                        uri = savedFilePath,
                         categoryId = categoryId,
                         timestamp = System.currentTimeMillis(),
                         isPinned = false,
-                        tags = emptyList()
+                        tags = listOf(documentType), // Add document type as a tag
+                        mimeType = mimeType
                     )
 
-                    Log.d(TAG, "Created PDF drop with ID: ${drop.id}, path: $savedFilePath")
+                    Log.d(TAG, "Created document drop with ID: ${drop.id}, path: $savedFilePath, type: $mimeType")
                     saveDrop(drop)
                 } else {
-                    Log.e(TAG, "Failed to save PDF to internal storage: savedFilePath is null")
+                    Log.e(TAG, "Failed to save document to internal storage: savedFilePath is null")
                 }
             } catch (e: Exception) {
-                Log.e(TAG, "Exception while saving PDF drop: ${e.message}", e)
+                Log.e(TAG, "Exception while saving document drop: ${e.message}", e)
             }
         }
     }

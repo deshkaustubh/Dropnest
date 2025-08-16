@@ -4,7 +4,7 @@ enum class DropType {
     LINK,
     NOTE,
     IMAGE,
-    PDF,
+    DOCUMENT,
     VIDEO,
     AUDIO
 }

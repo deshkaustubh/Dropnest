@@ -13,8 +13,6 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -121,7 +119,7 @@ fun DropCard(
                                 DropType.LINK -> Icons.Default.Link
                                 DropType.NOTE -> Icons.Default.Note
                                 DropType.IMAGE -> Icons.Default.Photo
-                                DropType.PDF -> Icons.Default.PictureAsPdf
+                                DropType.DOCUMENT -> Icons.Default.PictureAsPdf
                                 else -> Icons.Default.Note
                             },
                             contentDescription = drop.type.name,
