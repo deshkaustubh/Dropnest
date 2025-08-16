@@ -27,8 +27,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil.compose.rememberAsyncImagePainter
@@ -70,157 +72,218 @@ fun DropItem(
         DateUtils.MINUTE_IN_MILLIS
     ).toString()
 
-    Column(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(vertical = 8.dp)
-    ) {
-        // Sender label
-        Row(
-            verticalAlignment = Alignment.CenterVertically
+    // User messages on right, system messages on left
+    if (isSystem) {
+        // System/DropNest message - left aligned
+        Column(
+            modifier = modifier
+                .fillMaxWidth()
+                .padding(vertical = 8.dp, horizontal = 16.dp)
         ) {
-            // Avatar or System indicator
-            Box(
-                contentAlignment = Alignment.Center,
-                modifier = Modifier
-                    .size(36.dp)
-                    .clip(CircleShape)
-                    .background(
-                        if (isSystem) MaterialTheme.colorScheme.tertiary
-                        else MaterialTheme.colorScheme.primary
-                    )
+            // Sender label
+            Row(
+                verticalAlignment = Alignment.CenterVertically
             ) {
+                // Avatar
+                Box(
+                    contentAlignment = Alignment.Center,
+                    modifier = Modifier
+                        .size(36.dp)
+                        .clip(CircleShape)
+                        .background(MaterialTheme.colorScheme.tertiary)
+                ) {
+                    Text(
+                        text = "D",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onTertiary
+                    )
+                }
+
+                Spacer(modifier = Modifier.width(8.dp))
+
                 Text(
-                    text = if (isSystem) "D" else "Y",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = if (isSystem)
-                        MaterialTheme.colorScheme.onTertiary
-                    else
-                        MaterialTheme.colorScheme.onPrimary
+                    text = senderName,
+                    style = MaterialTheme.typography.titleSmall,
+                    color = MaterialTheme.colorScheme.onBackground
                 )
             }
 
-            Spacer(modifier = Modifier.width(8.dp))
+            Spacer(modifier = Modifier.height(4.dp))
 
-            Text(
-                text = senderName,
-                style = MaterialTheme.typography.titleSmall,
-                color = MaterialTheme.colorScheme.onBackground
-            )
+            // Message bubble - aligned to the left with padding
+            Card(
+                shape = RoundedCornerShape(
+                    topStart = 4.dp,
+                    topEnd = 16.dp,
+                    bottomStart = 16.dp,
+                    bottomEnd = 16.dp
+                ),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant
+                ),
+                modifier = Modifier
+                    .padding(end = 64.dp, start = 8.dp)
+                    .align(Alignment.Start)
+            ) {
+                MessageContent(
+                    text = text,
+                    uri = uri,
+                    title = title,
+                    type = type,
+                    timeFormatted = timeFormatted
+                )
+            }
         }
-
-        Spacer(modifier = Modifier.height(4.dp))
-
-        // Message bubble
-        Card(
-            shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(
-                containerColor = if (isSystem)
-                    MaterialTheme.colorScheme.surfaceVariant
-                else
-                    MaterialTheme.colorScheme.secondaryContainer
-            ),
-            modifier = Modifier
-                .padding(start = 44.dp)
+    } else {
+        // User message - right aligned, no avatar/sender needed
+        Column(
+            modifier = modifier
                 .fillMaxWidth()
+                .padding(vertical = 8.dp, horizontal = 16.dp)
         ) {
-            Column(modifier = Modifier.padding(12.dp)) {
-                // Content based on drop type
-                when (type) {
-                    DropType.NOTE -> {
+            // Message bubble - aligned to the right
+            Card(
+                shape = RoundedCornerShape(
+                    topStart = 16.dp,
+                    topEnd = 4.dp,
+                    bottomStart = 16.dp,
+                    bottomEnd = 16.dp
+                ),
+                colors = CardDefaults.cardColors(
+                    containerColor = Color(0xFF005C4B) // WhatsApp-like green
+                ),
+                modifier = Modifier
+                    .padding(start = 64.dp)
+                    .align(Alignment.End)
+            ) {
+                MessageContent(
+                    text = text,
+                    uri = uri,
+                    title = title,
+                    type = type,
+                    timeFormatted = timeFormatted,
+                    isUser = true
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun MessageContent(
+    text: String,
+    uri: String?,
+    title: String?,
+    type: DropType,
+    timeFormatted: String,
+    isUser: Boolean = false
+) {
+    val context = LocalContext.current
+    val textColor = if (isUser) Color.White else MaterialTheme.colorScheme.onSurface
+    val linkColor = if (isUser) Color(0xFF9EE6FC) else MaterialTheme.colorScheme.primary
+    val timeColor = if (isUser)
+        Color.White.copy(alpha = 0.7f)
+    else
+        MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+
+    Column(modifier = Modifier.padding(12.dp)) {
+        // Content based on drop type
+        when (type) {
+            DropType.NOTE -> {
+                Text(
+                    text = text,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = textColor
+                )
+            }
+            DropType.LINK -> {
+                Text(
+                    text = uri ?: text,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = linkColor,
+                    modifier = Modifier.clickable { /* Open link */ }
+                )
+            }
+            DropType.IMAGE -> {
+                uri?.let { imageUri ->
+                    Image(
+                        painter = rememberAsyncImagePainter(
+                            ImageRequest.Builder(context)
+                                .data(Uri.parse(imageUri))
+                                .build()
+                        ),
+                        contentDescription = title ?: "Image",
+                        contentScale = ContentScale.FillWidth,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(200.dp)
+                            .clip(RoundedCornerShape(8.dp))
+                    )
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    title?.let {
                         Text(
-                            text = text,
+                            text = it,
                             style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                    }
-                    DropType.LINK -> {
-                        Text(
-                            text = uri ?: text,
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.clickable { /* Open link */ }
-                        )
-                    }
-                    DropType.IMAGE -> {
-                        uri?.let { imageUri ->
-                            Image(
-                                painter = rememberAsyncImagePainter(
-                                    ImageRequest.Builder(context)
-                                        .data(Uri.parse(imageUri))
-                                        .build()
-                                ),
-                                contentDescription = title ?: "Image",
-                                contentScale = ContentScale.FillWidth,
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(200.dp)
-                                    .clip(RoundedCornerShape(8.dp))
-                            )
-
-                            Spacer(modifier = Modifier.height(8.dp))
-
-                            title?.let {
-                                Text(
-                                    text = it,
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                        }
-                    }
-                    DropType.PDF -> {
-                        Box(
-                            contentAlignment = Alignment.Center,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(120.dp)
-                                .background(
-                                    color = MaterialTheme.colorScheme.surface,
-                                    shape = RoundedCornerShape(8.dp)
-                                )
-                        ) {
-                            Column(
-                                horizontalAlignment = Alignment.CenterHorizontally
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.PictureAsPdf,
-                                    contentDescription = "PDF Document",
-                                    tint = MaterialTheme.colorScheme.tertiary,
-                                    modifier = Modifier.size(48.dp)
-                                )
-
-                                Spacer(modifier = Modifier.height(8.dp))
-
-                                Text(
-                                    text = title ?: uri?.substringAfterLast('/') ?: "PDF Document",
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis
-                                )
-                            }
-                        }
-                    }
-                    else -> {
-                        Text(
-                            text = text,
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurface
+                            color = textColor
                         )
                     }
                 }
-
-                // Timestamp
-                Text(
-                    text = timeFormatted,
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+            }
+            DropType.PDF -> {
+                Box(
+                    contentAlignment = Alignment.Center,
                     modifier = Modifier
-                        .align(Alignment.End)
-                        .padding(top = 4.dp)
+                        .fillMaxWidth()
+                        .height(120.dp)
+                        .background(
+                            color = if (isUser)
+                                Color(0xFF004A3D)
+                            else
+                                MaterialTheme.colorScheme.surface,
+                            shape = RoundedCornerShape(8.dp)
+                        )
+                ) {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.PictureAsPdf,
+                            contentDescription = "PDF Document",
+                            tint = if (isUser) Color.White else MaterialTheme.colorScheme.tertiary,
+                            modifier = Modifier.size(48.dp)
+                        )
+
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        Text(
+                            text = title ?: uri?.substringAfterLast('/') ?: "PDF Document",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = textColor,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+                }
+            }
+            else -> {
+                Text(
+                    text = text,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = textColor
                 )
             }
         }
+
+        // Timestamp
+        Text(
+            text = timeFormatted,
+            style = MaterialTheme.typography.labelSmall,
+            color = timeColor,
+            modifier = Modifier
+                .align(Alignment.End)
+                .padding(top = 4.dp)
+        )
     }
 }

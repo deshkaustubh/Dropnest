@@ -68,7 +68,6 @@ fun DropNestNavHost(
                     navController.navigate(DropNestDestination.CreateCategory.route)
                 },
                 onCategoryClick = { categoryId ->
-                    // FIX: Navigate to CategoryDetail instead of EditCategory
                     Log.d(TAG, "Navigating to Category Detail screen for category: $categoryId")
                     navController.navigate(DropNestDestination.CategoryDetail.createRoute(categoryId))
                 }
@@ -120,8 +119,9 @@ fun DropNestNavHost(
                     navController.popBackStack()
                 },
                 onSettingsClick = {
-                    Log.d(TAG, "Navigating to Settings from Category Detail")
-                    navController.navigate(DropNestDestination.Settings.route)
+                    // Navigate to EditCategory screen with current categoryId
+                    Log.d(TAG, "Navigating to Edit Category screen from Category Detail for category: $categoryId")
+                    navController.navigate(DropNestDestination.EditCategory.createRoute(categoryId))
                 }
             )
         }
