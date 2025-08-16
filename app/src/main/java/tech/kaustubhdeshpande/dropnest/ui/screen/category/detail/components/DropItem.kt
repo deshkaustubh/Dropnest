@@ -27,7 +27,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
@@ -61,6 +60,7 @@ fun DropItem(
     type: DropType = DropType.NOTE,
     timestamp: Long = System.currentTimeMillis(),
     isSystem: Boolean = false,
+    senderName: String = "You",
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -86,21 +86,24 @@ fun DropItem(
                     .size(36.dp)
                     .clip(CircleShape)
                     .background(
-                        if (isSystem) MaterialTheme.colorScheme.secondary
+                        if (isSystem) MaterialTheme.colorScheme.tertiary
                         else MaterialTheme.colorScheme.primary
                     )
             ) {
                 Text(
-                    text = if (isSystem) "S" else "Y",
+                    text = if (isSystem) "D" else "Y",
                     style = MaterialTheme.typography.bodyMedium,
-                    color = Color.White
+                    color = if (isSystem)
+                        MaterialTheme.colorScheme.onTertiary
+                    else
+                        MaterialTheme.colorScheme.onPrimary
                 )
             }
 
             Spacer(modifier = Modifier.width(8.dp))
 
             Text(
-                text = if (isSystem) "System" else "You",
+                text = senderName,
                 style = MaterialTheme.typography.titleSmall,
                 color = MaterialTheme.colorScheme.onBackground
             )
@@ -112,7 +115,10 @@ fun DropItem(
         Card(
             shape = RoundedCornerShape(16.dp),
             colors = CardDefaults.cardColors(
-                containerColor = if (isSystem) Color(0xFF1F2C25) else Color(0xFF2A3A31)
+                containerColor = if (isSystem)
+                    MaterialTheme.colorScheme.surfaceVariant
+                else
+                    MaterialTheme.colorScheme.secondaryContainer
             ),
             modifier = Modifier
                 .padding(start = 44.dp)
@@ -170,7 +176,7 @@ fun DropItem(
                                 .fillMaxWidth()
                                 .height(120.dp)
                                 .background(
-                                    color = Color(0xFF121C17),
+                                    color = MaterialTheme.colorScheme.surface,
                                     shape = RoundedCornerShape(8.dp)
                                 )
                         ) {

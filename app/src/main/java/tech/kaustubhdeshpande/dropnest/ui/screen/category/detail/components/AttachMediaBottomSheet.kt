@@ -17,7 +17,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 
@@ -32,7 +31,7 @@ fun AttachMediaBottomSheet(
         Surface(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp),
-            color = Color(0xFF121C17)
+            color = MaterialTheme.colorScheme.surface
         ) {
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
@@ -56,7 +55,7 @@ fun AttachMediaBottomSheet(
                 Text(
                     text = "Attach Media",
                     style = MaterialTheme.typography.titleLarge,
-                    color = MaterialTheme.colorScheme.onBackground
+                    color = MaterialTheme.colorScheme.onSurface
                 )
 
                 Spacer(modifier = Modifier.height(16.dp))
@@ -77,7 +76,7 @@ fun AttachMediaBottomSheet(
                         .height(56.dp),
                     shape = RoundedCornerShape(8.dp),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFF2A3A31)
+                        containerColor = MaterialTheme.colorScheme.primary
                     )
                 ) {
                     Text("Upload Image")
@@ -93,7 +92,7 @@ fun AttachMediaBottomSheet(
                         .height(56.dp),
                     shape = RoundedCornerShape(8.dp),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFF2A3A31)
+                        containerColor = MaterialTheme.colorScheme.secondary
                     )
                 ) {
                     Text("Upload PDF")

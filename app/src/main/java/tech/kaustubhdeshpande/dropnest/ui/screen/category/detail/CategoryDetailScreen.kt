@@ -33,21 +33,21 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import tech.kaustubhdeshpande.dropnest.presentation.navigation.DropNestDestination
 import tech.kaustubhdeshpande.dropnest.ui.screen.category.detail.components.AttachMediaBottomSheet
 import tech.kaustubhdeshpande.dropnest.ui.screen.category.detail.components.DropInputField
 import tech.kaustubhdeshpande.dropnest.ui.screen.category.detail.components.DropItem
-import tech.kaustubhdeshpande.dropnest.ui.screen.category.detail.components.SystemMessage
+import tech.kaustubhdeshpande.dropnest.ui.screen.category.detail.components.DropNestMessage
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CategoryDetailScreen(
     categoryId: String,
     onBackClick: () -> Unit,
-    onSettingsClick: () -> Unit,
+    onSettingsClick: () -> Unit, // This will now navigate to Edit Category screen
     modifier: Modifier = Modifier,
     viewModel: CategoryDetailViewModel = hiltViewModel()
 ) {
@@ -100,18 +100,19 @@ fun CategoryDetailScreen(
                     }
                 },
                 actions = {
+                    // Settings icon now used to edit the category
                     IconButton(onClick = onSettingsClick) {
                         Icon(
                             imageVector = Icons.Default.Settings,
-                            contentDescription = "Settings"
+                            contentDescription = "Edit Category"
                         )
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color(0xFF121C17),
-                    titleContentColor = MaterialTheme.colorScheme.onBackground,
-                    navigationIconContentColor = MaterialTheme.colorScheme.onBackground,
-                    actionIconContentColor = MaterialTheme.colorScheme.onBackground
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    titleContentColor = MaterialTheme.colorScheme.onSurface,
+                    navigationIconContentColor = MaterialTheme.colorScheme.onSurface,
+                    actionIconContentColor = MaterialTheme.colorScheme.onSurface
                 )
             )
         }
@@ -120,7 +121,7 @@ fun CategoryDetailScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .background(Color(0xFF0B1410))
+                .background(MaterialTheme.colorScheme.background)
         ) {
             Column(modifier = Modifier.fillMaxSize()) {
                 // Subtitle showing current category
@@ -137,41 +138,26 @@ fun CategoryDetailScreen(
                     contentPadding = PaddingValues(16.dp),
                     modifier = Modifier.weight(1f)
                 ) {
-                    // System welcome messages (only show if no drops yet)
+                    // Welcome messages (only show if no drops yet)
                     if (uiState.drops.isEmpty()) {
                         item {
-                            SystemMessage(
-                                text = "Welcome to DropNest! This thread is your personal vault."
+                            DropNestMessage(
+                                text = "Welcome to your ${uiState.category?.name ?: ""} vault!"
                             )
                         }
 
                         item {
-                            SystemMessage(
-                                text = "Here's a quick guide to get you started: \n" +
-                                        "1. **Drop Items:** Tap the '+' or 📎 to add links, notes, images, or PDFs.\n" +
-                                        "2. **Thread = Vault:** Everything you drop stays organized in this thread.\n" +
-                                        "3. **Search:** Use the search bar to find items instantly.\n" +
-                                        "4. **Settings:** Customize your DropNest experience anytime."
+                            DropNestMessage(
+                                text = "This is your personal space for collecting and organizing content.\n\n" +
+                                        "• Use the attachment icon to add images and PDFs\n" +
+                                        "• Type or paste links and notes directly\n" +
+                                        "• Your content stays organized in this category"
                             )
                         }
 
                         item {
-                            Text(
-                                text = "Everything you drop here stays organized in your ${uiState.category?.name ?: ""} vault.",
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
-                                modifier = Modifier
-                                    .padding(vertical = 16.dp)
-                                    .fillMaxWidth()
-                            )
-
-                            Text(
-                                text = "Start by saving your first item. This space is yours.",
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
-                                modifier = Modifier
-                                    .padding(vertical = 16.dp)
-                                    .fillMaxWidth()
+                            DropNestMessage(
+                                text = "Start adding content to build your collection. Everything is searchable and easy to find later."
                             )
                         }
                     }

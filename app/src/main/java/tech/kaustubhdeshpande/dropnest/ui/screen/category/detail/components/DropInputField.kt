@@ -23,7 +23,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
@@ -39,7 +38,7 @@ fun DropInputField(
     modifier: Modifier = Modifier
 ) {
     Surface(
-        color = Color(0xFF121C17),
+        color = MaterialTheme.colorScheme.surface,
         tonalElevation = 2.dp,
         modifier = modifier
     ) {
@@ -64,7 +63,7 @@ fun DropInputField(
                 modifier = Modifier
                     .weight(1f)
                     .clip(RoundedCornerShape(24.dp))
-                    .background(Color(0xFF1F2C25))
+                    .background(MaterialTheme.colorScheme.surfaceVariant)
                     .padding(horizontal = 16.dp, vertical = 12.dp)
             ) {
                 BasicTextField(
