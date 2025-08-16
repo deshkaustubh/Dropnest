@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<paths>
+    <!-- For app's internal files -->
+    <files-path name="images" path="images/"/>
+    <files-path name="pdfs" path="pdfs/"/>
+    <files-path name="documents" path="documents/"/>
+
+    <!-- For cached files -->
+    <cache-path name="cache" path="/"/>
+
+    <!-- External files if needed -->
+    <external-files-path name="external_files" path="."/>
+
+    <!-- For sharing any file in internal storage using content:// URI -->
+    <files-path name="internal_files" path="."/>
+</paths>

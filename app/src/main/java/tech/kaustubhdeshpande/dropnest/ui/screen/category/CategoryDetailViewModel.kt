@@ -1,8 +1,10 @@
 package tech.kaustubhdeshpande.dropnest.ui.screen.category.detail
 
+import android.app.Application
+import android.net.Uri
 import android.util.Log
 import android.webkit.URLUtil
-import androidx.lifecycle.ViewModel
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -16,6 +18,7 @@ import tech.kaustubhdeshpande.dropnest.domain.model.DropType
 import tech.kaustubhdeshpande.dropnest.domain.usecase.category.GetCategoryByIdUseCase
 import tech.kaustubhdeshpande.dropnest.domain.usecase.drop.CreateDropUseCase
 import tech.kaustubhdeshpande.dropnest.domain.usecase.drop.GetDropsByCategoryUseCase
+import tech.kaustubhdeshpande.dropnest.util.FileManager
 import java.util.UUID
 import javax.inject.Inject
 
@@ -23,11 +26,13 @@ private const val TAG = "CategoryDetailViewModel"
 
 @HiltViewModel
 class CategoryDetailViewModel @Inject constructor(
+    application: Application,
     private val getCategoryByIdUseCase: GetCategoryByIdUseCase,
     private val getDropsByCategoryUseCase: GetDropsByCategoryUseCase,
     private val createDropUseCase: CreateDropUseCase
-) : ViewModel() {
+) : AndroidViewModel(application) {
 
+    private val fileManager = FileManager(getApplication())
     private val _uiState = MutableStateFlow(CategoryDetailState())
     val uiState: StateFlow<CategoryDetailState> = _uiState.asStateFlow()
 
@@ -94,47 +99,95 @@ class CategoryDetailViewModel @Inject constructor(
     fun saveDrop(drop: Drop) {
         viewModelScope.launch {
             try {
+                Log.d(TAG, "Saving drop: ${drop.id}, type: ${drop.type}")
                 createDropUseCase(drop)
+                Log.d(TAG, "Drop saved successfully")
+
+                // Refresh the drops list
+                loadDrops(drop.categoryId)
             } catch (e: Exception) {
-                Log.e(TAG, "Error saving drop", e)
+                Log.e(TAG, "Error saving drop: ${e.message}", e)
             }
         }
     }
 
-    fun saveImageDrop(uri: String) {
-        val categoryId = _uiState.value.category?.id ?: return
+    fun saveImageDrop(sourceUriString: String) {
+        viewModelScope.launch {
+            try {
+                Log.d(TAG, "Saving image from URI: $sourceUriString")
+                val categoryId = _uiState.value.category?.id ?: run {
+                    Log.e(TAG, "Cannot save image: Category ID is null")
+                    return@launch
+                }
 
-        val drop = Drop(
-            id = UUID.randomUUID().toString(),
-            type = DropType.IMAGE,
-            text = null,
-            title = "Image",
-            uri = uri,
-            categoryId = categoryId,
-            timestamp = System.currentTimeMillis(),
-            isPinned = false,
-            tags = emptyList()
-        )
+                val sourceUri = Uri.parse(sourceUriString)
 
-        saveDrop(drop)
+                // Save the file to app storage
+                val savedFilePath = fileManager.saveFileToAppStorage(sourceUri, "images")
+
+                if (savedFilePath != null) {
+                    val drop = Drop(
+                        id = UUID.randomUUID().toString(),
+                        type = DropType.IMAGE,
+                        text = null,
+                        title = "Image",
+                        uri = savedFilePath, // Use the saved file path
+                        categoryId = categoryId,
+                        timestamp = System.currentTimeMillis(),
+                        isPinned = false,
+                        tags = emptyList()
+                    )
+
+                    Log.d(TAG, "Created image drop with ID: ${drop.id}, path: $savedFilePath")
+                    saveDrop(drop)
+                } else {
+                    Log.e(TAG, "Failed to save image to internal storage: savedFilePath is null")
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Exception while saving image drop: ${e.message}", e)
+            }
+        }
     }
 
-    fun savePdfDrop(uri: String) {
-        val categoryId = _uiState.value.category?.id ?: return
+    fun savePdfDrop(sourceUriString: String) {
+        viewModelScope.launch {
+            try {
+                Log.d(TAG, "Saving PDF from URI: $sourceUriString")
+                val categoryId = _uiState.value.category?.id ?: run {
+                    Log.e(TAG, "Cannot save PDF: Category ID is null")
+                    return@launch
+                }
 
-        val drop = Drop(
-            id = UUID.randomUUID().toString(),
-            type = DropType.PDF,
-            text = null,
-            title = "PDF Document",
-            uri = uri,
-            categoryId = categoryId,
-            timestamp = System.currentTimeMillis(),
-            isPinned = false,
-            tags = emptyList()
-        )
+                val sourceUri = Uri.parse(sourceUriString)
 
-        saveDrop(drop)
+                // Get the filename first
+                val fileName = fileManager.getFileName(sourceUri)
+
+                // Save the file to app storage
+                val savedFilePath = fileManager.saveFileToAppStorage(sourceUri, "pdfs")
+
+                if (savedFilePath != null) {
+                    val drop = Drop(
+                        id = UUID.randomUUID().toString(),
+                        type = DropType.PDF,
+                        text = null,
+                        title = fileName,
+                        uri = savedFilePath, // Use the saved file path
+                        categoryId = categoryId,
+                        timestamp = System.currentTimeMillis(),
+                        isPinned = false,
+                        tags = emptyList()
+                    )
+
+                    Log.d(TAG, "Created PDF drop with ID: ${drop.id}, path: $savedFilePath")
+                    saveDrop(drop)
+                } else {
+                    Log.e(TAG, "Failed to save PDF to internal storage: savedFilePath is null")
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Exception while saving PDF drop: ${e.message}", e)
+            }
+        }
     }
 }
 

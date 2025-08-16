@@ -13,11 +13,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import tech.kaustubhdeshpande.dropnest.domain.model.Drop
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 @Composable
 fun DropItem(
     drop: Drop,
-    isFromCurrentUser: Boolean,
+    isFromCurrentUser: Boolean = true, // Default to true since most drops will be from the user
     onMediaClick: (Drop) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -82,4 +85,10 @@ fun DropItem(
             }
         }
     }
+}
+
+// Helper function to format timestamp
+fun formatTimestamp(timestamp: Long): String {
+    val sdf = SimpleDateFormat("h:mm a", Locale.getDefault())
+    return sdf.format(Date(timestamp))
 }

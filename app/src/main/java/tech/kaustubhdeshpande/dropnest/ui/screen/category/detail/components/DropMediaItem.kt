@@ -4,7 +4,6 @@ import android.content.Intent
 import android.net.Uri
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -23,6 +22,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -38,9 +38,6 @@ import tech.kaustubhdeshpande.dropnest.domain.model.Drop
 import tech.kaustubhdeshpande.dropnest.domain.model.DropType
 import java.io.File
 import java.text.DecimalFormat
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
 
 @Composable
 fun DropMediaItem(
@@ -51,10 +48,7 @@ fun DropMediaItem(
     when (drop.type) {
         DropType.IMAGE -> ImageDropItem(drop, onClick, modifier)
         DropType.PDF -> PdfDropItem(drop, modifier)
-        DropType.VIDEO, DropType.AUDIO -> {
-            // Handle other media types if needed
-        }
-        else -> {} // Not a media type
+        else -> {} // Handle other media types if needed
     }
 }
 
@@ -66,6 +60,26 @@ fun ImageDropItem(
 ) {
     val context = LocalContext.current
     val uri = drop.uri ?: return
+
+    // Create a content URI using FileProvider
+    val contentUri = remember(uri) {
+        try {
+            val file = File(uri)
+            if (file.exists()) {
+                FileProvider.getUriForFile(
+                    context,
+                    "${context.packageName}.provider",
+                    file
+                )
+            } else {
+                // Fallback to direct parsing
+                Uri.parse(uri)
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            Uri.parse(uri)
+        }
+    }
 
     Surface(
         shape = RoundedCornerShape(8.dp),
@@ -79,8 +93,9 @@ fun ImageDropItem(
             // Image with proper caching and error handling
             AsyncImage(
                 model = ImageRequest.Builder(context)
-                    .data(uri)
+                    .data(contentUri)
                     .crossfade(true)
+                    .error(android.R.drawable.ic_menu_gallery)
                     .build(),
                 contentDescription = "Image",
                 contentScale = ContentScale.Crop,
@@ -111,7 +126,7 @@ fun PdfDropItem(
     val uri = drop.uri ?: return
     val file = File(uri)
     val fileSize = formatFileSize(file.length())
-    val fileName = file.name
+    val fileName = drop.title ?: file.name
 
     // Create a card-like PDF representation
     Surface(
@@ -123,14 +138,14 @@ fun PdfDropItem(
             .clickable {
                 // Open PDF with system PDF viewer
                 try {
-                    val fileUri = FileProvider.getUriForFile(
+                    val contentUri = FileProvider.getUriForFile(
                         context,
                         "${context.packageName}.provider",
                         file
                     )
 
                     val intent = Intent(Intent.ACTION_VIEW).apply {
-                        setDataAndType(fileUri, "application/pdf")
+                        setDataAndType(contentUri, "application/pdf")
                         addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                     }
 
@@ -182,12 +197,6 @@ fun PdfDropItem(
             )
         }
     }
-}
-
-// Helper function to format timestamp
-fun formatTimestamp(timestamp: Long): String {
-    val sdf = SimpleDateFormat("h:mm a", Locale.getDefault())
-    return sdf.format(Date(timestamp))
 }
 
 // Helper function to format file size

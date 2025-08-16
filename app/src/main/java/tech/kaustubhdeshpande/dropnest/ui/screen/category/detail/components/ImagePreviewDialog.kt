@@ -1,6 +1,8 @@
 package tech.kaustubhdeshpande.dropnest.ui.screen.category.detail.components
 
 import android.content.Intent
+import android.net.Uri
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.layout.Box
@@ -32,6 +34,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.core.content.FileProvider
 import coil.compose.AsyncImage
+import coil.request.ImageRequest
 import java.io.File
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -42,6 +45,28 @@ fun ImagePreviewDialog(
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
+
+    // Convert file path to content URI for safe access
+    val contentUri = remember {
+        try {
+            val file = File(imageUri)
+            if (file.exists()) {
+                FileProvider.getUriForFile(
+                    context,
+                    "${context.packageName}.provider",
+                    file
+                )
+            } else {
+                // If file doesn't exist, try using the URI directly
+                // (though this likely won't work after app restart)
+                Uri.parse(imageUri)
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            // Fallback to direct URI parsing, though it may not work
+            Uri.parse(imageUri)
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -58,24 +83,37 @@ fun ImagePreviewDialog(
                 },
                 actions = {
                     IconButton(onClick = {
-                        // Share functionality
+                        // Share functionality with error handling
                         try {
                             val file = File(imageUri)
-                            val uri = FileProvider.getUriForFile(
-                                context,
-                                "${context.packageName}.provider",
-                                file
-                            )
+                            if (file.exists()) {
+                                val shareUri = FileProvider.getUriForFile(
+                                    context,
+                                    "${context.packageName}.provider",
+                                    file
+                                )
 
-                            val intent = Intent(Intent.ACTION_SEND).apply {
-                                type = "image/*"
-                                putExtra(Intent.EXTRA_STREAM, uri)
-                                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                                val intent = Intent(Intent.ACTION_SEND).apply {
+                                    type = "image/*"
+                                    putExtra(Intent.EXTRA_STREAM, shareUri)
+                                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                                }
+
+                                context.startActivity(Intent.createChooser(intent, "Share via"))
+                            } else {
+                                Toast.makeText(
+                                    context,
+                                    "Cannot share: Image file not found",
+                                    Toast.LENGTH_SHORT
+                                ).show()
                             }
-
-                            context.startActivity(Intent.createChooser(intent, "Share via"))
                         } catch (e: Exception) {
                             e.printStackTrace()
+                            Toast.makeText(
+                                context,
+                                "Failed to share image",
+                                Toast.LENGTH_SHORT
+                            ).show()
                         }
                     }) {
                         Icon(
@@ -104,8 +142,13 @@ fun ImagePreviewDialog(
             var offsetX by remember { mutableFloatStateOf(0f) }
             var offsetY by remember { mutableFloatStateOf(0f) }
 
+            // Use Coil's ImageRequest for better error handling
             AsyncImage(
-                model = imageUri,
+                model = ImageRequest.Builder(context)
+                    .data(contentUri)
+                    .crossfade(true)
+                    .error(android.R.drawable.ic_menu_report_image) // Show error drawable if loading fails
+                    .build(),
                 contentDescription = "Image",
                 contentScale = ContentScale.Fit,
                 modifier = Modifier
