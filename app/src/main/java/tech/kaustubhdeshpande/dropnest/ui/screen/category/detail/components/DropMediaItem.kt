@@ -17,6 +17,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Article
+import androidx.compose.material.icons.automirrored.filled.InsertDriveFile
 import androidx.compose.material.icons.filled.Article
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.InsertDriveFile
@@ -274,7 +276,7 @@ private fun detectDocumentType(extension: String, mimeType: String?): DocumentIn
         )
 
         "txt", "text", "md", "markdown" -> return DocumentInfo(
-            icon = Icons.Default.Article,
+            icon = Icons.AutoMirrored.Filled.Article,
             label = "TXT",
             color = Color(0xFF9575CD), // Purple
             mimeType = "text/plain"
@@ -313,7 +315,7 @@ private fun detectDocumentType(extension: String, mimeType: String?): DocumentIn
             )
 
             it.contains("text/plain") -> return DocumentInfo(
-                icon = Icons.Default.Article,
+                icon = Icons.AutoMirrored.Filled.Article,
                 label = "TXT",
                 color = Color(0xFF9575CD), // Purple
                 mimeType = "text/plain"
@@ -323,7 +325,7 @@ private fun detectDocumentType(extension: String, mimeType: String?): DocumentIn
 
     // Default case if we can't identify the document type
     return DocumentInfo(
-        icon = Icons.Default.InsertDriveFile,
+        icon = Icons.AutoMirrored.Filled.InsertDriveFile,
         label = "DOC",
         color = Color(0xFF78909C), // Blue gray
         mimeType = "application/octet-stream"
