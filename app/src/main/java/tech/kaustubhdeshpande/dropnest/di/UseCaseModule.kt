@@ -63,4 +63,17 @@ object UseCaseModule {
     fun provideDeleteCategoryUseCase(categoryRepository: CategoryRepository): DeleteCategoryUseCase {
         return DeleteCategoryUseCase(categoryRepository)
     }
+
+    // 🆕 ADD THESE TWO:
+    @Provides
+    @Singleton
+    fun provideGetCategoryByIdUseCase(categoryRepository: CategoryRepository): GetCategoryByIdUseCase {
+        return GetCategoryByIdUseCase(categoryRepository)
+    }
+
+    @Provides
+    @Singleton
+    fun provideGetCustomCategoriesUseCase(categoryRepository: CategoryRepository): GetCustomCategoriesUseCase {
+        return GetCustomCategoriesUseCase(categoryRepository)
+    }
 }

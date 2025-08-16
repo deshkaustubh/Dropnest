@@ -10,7 +10,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import tech.kaustubhdeshpande.dropnest.domain.repository.CategoryRepository
+import tech.kaustubhdeshpande.dropnest.domain.usecase.category.GetCustomCategoriesUseCase
 import javax.inject.Inject
 
 private const val TAG = "HomeViewModel"
@@ -29,7 +29,7 @@ abstract class HomeViewModel : ViewModel() {
 // The real implementation used in the app
 @HiltViewModel
 class HomeViewModelImpl @Inject constructor(
-    private val categoryRepository: CategoryRepository
+    private val getCustomCategoriesUseCase: GetCustomCategoriesUseCase  // 🔄 CHANGED: Use case instead of repository
 ) : HomeViewModel() {
     private val _uiState = MutableStateFlow(HomeScreenState())
     override val uiState: StateFlow<HomeScreenState> = _uiState.asStateFlow()
@@ -44,7 +44,8 @@ class HomeViewModelImpl @Inject constructor(
                 Log.d(TAG, "Loading categories...")
                 _uiState.update { it.copy(isLoading = true) }
 
-                categoryRepository.getCustomCategories().collectLatest { categories ->
+                // 🔄 CHANGED: Use the use case instead of direct repository access
+                getCustomCategoriesUseCase().collectLatest { categories ->
                     Log.d(TAG, "Received ${categories.size} categories")
                     _uiState.update { state ->
                         state.copy(
