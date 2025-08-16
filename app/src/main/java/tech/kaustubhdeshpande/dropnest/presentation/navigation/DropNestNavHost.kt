@@ -2,12 +2,14 @@ package tech.kaustubhdeshpande.dropnest.presentation.navigation
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import tech.kaustubhdeshpande.dropnest.domain.model.Drop
 import tech.kaustubhdeshpande.dropnest.ui.screen.home.HomeScreen
+import tech.kaustubhdeshpande.dropnest.ui.screen.home.HomeViewModelImpl
 import tech.kaustubhdeshpande.dropnest.ui.screen.vault.VaultScreen
 import tech.kaustubhdeshpande.dropnest.ui.screen.welcome.WelcomeScreen
 
@@ -53,14 +55,8 @@ fun DropNestNavHost(
 
         // Home Screen - new main screen of the app
         composable(route = DropNestDestination.Home.route) {
-            HomeScreen(
-                onAddCategoryClick = {
-                    navController.navigate(DropNestDestination.CreateDrop.route)
-                },
-                onCreateCategoryClick = {
-                    navController.navigate(DropNestDestination.CreateDrop.route)
-                }
-            )
+            val viewModel: HomeViewModelImpl = hiltViewModel()
+            HomeScreen(viewModel = viewModel)
         }
 
         // Other routes will be implemented as we build those screens

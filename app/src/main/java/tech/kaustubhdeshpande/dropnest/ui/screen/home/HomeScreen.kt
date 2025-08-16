@@ -3,54 +3,43 @@ package tech.kaustubhdeshpande.dropnest.ui.screen.home
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.outlined.Bookmark
-import androidx.compose.material.icons.outlined.Image
-import androidx.compose.material.icons.outlined.Notes
-import androidx.compose.material.icons.outlined.PictureAsPdf
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.FloatingActionButton
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
+import androidx.compose.material.icons.outlined.*
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
 import tech.kaustubhdeshpande.dropnest.R
 import tech.kaustubhdeshpande.dropnest.ui.theme.DropnestTheme
 
 @Composable
 fun HomeScreen(
-    onAddCategoryClick: () -> Unit = {},
-    onCreateCategoryClick: () -> Unit = {},
+    viewModel: HomeViewModel,
     modifier: Modifier = Modifier
 ) {
+    val uiState by viewModel.uiState.collectAsState()
+
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
         floatingActionButton = {
             FloatingActionButton(
-                onClick = onAddCategoryClick,
+                onClick = { viewModel.onAddCategoryClick() },
                 containerColor = MaterialTheme.colorScheme.tertiary,
                 shape = RoundedCornerShape(4.dp),
                 modifier = Modifier.size(56.dp)
@@ -71,38 +60,39 @@ fun HomeScreen(
                 .padding(16.dp)
         ) {
             // Header section
-            HeaderSection(onAddCategoryClick = onAddCategoryClick)
+            HeaderSection()
 
             Spacer(modifier = Modifier.height(16.dp))
 
             // Default categories grid
-            DefaultCategoriesGrid()
+            DefaultCategoriesGrid(
+                onSavedLinksClick = { viewModel.onDefaultCategoryClick(DefaultCategoryType.SAVED_LINKS) },
+                onNotesClick = { viewModel.onDefaultCategoryClick(DefaultCategoryType.NOTES) },
+                onImagesClick = { viewModel.onDefaultCategoryClick(DefaultCategoryType.IMAGES) },
+                onPdfsClick = { viewModel.onDefaultCategoryClick(DefaultCategoryType.PDFS) }
+            )
 
             Spacer(modifier = Modifier.height(32.dp))
 
             // Custom categories section
-            CustomCategoriesSection(onCreateCategoryClick = onCreateCategoryClick)
+            CustomCategoriesSection(
+                categories = uiState.customCategories,
+                isLoading = uiState.isLoading,
+                onCategoryClick = { viewModel.onCategoryClick(it) },
+                onCreateCategoryClick = { viewModel.onCreateCategoryClick() }
+            )
         }
     }
 }
 
 @Composable
-fun HeaderSection(
-    onAddCategoryClick: () -> Unit,
-    modifier: Modifier = Modifier
-) {
+fun HeaderSection(modifier: Modifier = Modifier) {
     Column(modifier = modifier.fillMaxWidth()) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text(
-                text = "Your Categories",
-                style = MaterialTheme.typography.headlineMedium,
-                color = MaterialTheme.colorScheme.onBackground,
-            )
-        }
+        Text(
+            text = "Your Categories",
+            style = MaterialTheme.typography.headlineMedium,
+            color = MaterialTheme.colorScheme.onBackground,
+        )
 
         Spacer(modifier = Modifier.height(8.dp))
 
@@ -115,7 +105,13 @@ fun HeaderSection(
 }
 
 @Composable
-fun DefaultCategoriesGrid(modifier: Modifier = Modifier) {
+fun DefaultCategoriesGrid(
+    onSavedLinksClick: () -> Unit,
+    onNotesClick: () -> Unit,
+    onImagesClick: () -> Unit,
+    onPdfsClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
     Column(modifier = modifier.fillMaxWidth()) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -124,13 +120,13 @@ fun DefaultCategoriesGrid(modifier: Modifier = Modifier) {
             CategoryCard(
                 icon = Icons.Outlined.Bookmark,
                 title = "Saved Links",
-                onClick = {},
+                onClick = onSavedLinksClick,
                 modifier = Modifier.weight(1f)
             )
             CategoryCard(
                 icon = Icons.Outlined.Notes,
                 title = "Notes",
-                onClick = {},
+                onClick = onNotesClick,
                 modifier = Modifier.weight(1f)
             )
         }
@@ -144,13 +140,13 @@ fun DefaultCategoriesGrid(modifier: Modifier = Modifier) {
             CategoryCard(
                 icon = Icons.Outlined.Image,
                 title = "Images",
-                onClick = {},
+                onClick = onImagesClick,
                 modifier = Modifier.weight(1f)
             )
             CategoryCard(
                 icon = Icons.Outlined.PictureAsPdf,
                 title = "PDFs",
-                onClick = {},
+                onClick = onPdfsClick,
                 modifier = Modifier.weight(1f)
             )
         }
@@ -203,12 +199,14 @@ fun CategoryCard(
 
 @Composable
 fun CustomCategoriesSection(
+    categories: List<Category>,
+    isLoading: Boolean,
+    onCategoryClick: (String) -> Unit,
     onCreateCategoryClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Column(
-        modifier = modifier.fillMaxWidth(),
-        horizontalAlignment = Alignment.CenterHorizontally
+        modifier = modifier.fillMaxWidth()
     ) {
         Text(
             text = "Custom Categories",
@@ -219,6 +217,44 @@ fun CustomCategoriesSection(
 
         Spacer(modifier = Modifier.height(16.dp))
 
+        if (isLoading) {
+            // Show loading indicator
+            Box(
+                contentAlignment = Alignment.Center,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(200.dp)
+            ) {
+                CircularProgressIndicator(color = MaterialTheme.colorScheme.tertiary)
+            }
+        } else if (categories.isEmpty()) {
+            // Show empty state
+            EmptyCustomCategoriesState(onCreateCategoryClick)
+        } else {
+            // Show grid of custom categories
+            LazyVerticalGrid(
+                columns = GridCells.Fixed(2),
+                horizontalArrangement = Arrangement.spacedBy(16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                items(categories) { category ->
+                    CustomCategoryCard(
+                        category = category,
+                        onClick = { onCategoryClick(category.id) }
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun EmptyCustomCategoriesState(onCreateCategoryClick: () -> Unit) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier.fillMaxWidth()
+    ) {
         // Placeholder image
         Image(
             painter = painterResource(id = R.drawable.empty_category_placeholder),
@@ -267,10 +303,72 @@ fun CustomCategoriesSection(
     }
 }
 
+@Composable
+fun CustomCategoryCard(
+    category: Category,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    // Convert the color Long to Color
+    val categoryColor = Color(category.color)
+
+    Surface(
+        onClick = onClick,
+        shape = RoundedCornerShape(12.dp),
+        color = MaterialTheme.colorScheme.surfaceVariant,
+        modifier = modifier
+            .height(120.dp)
+            .border(
+                width = 1.dp,
+                color = categoryColor,
+                shape = RoundedCornerShape(12.dp)
+            )
+    ) {
+        Column(
+            horizontalAlignment = Alignment.Start,
+            verticalArrangement = Arrangement.Center,
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(16.dp)
+        ) {
+            // For a real implementation, you might want to dynamically load icons
+            // For now we'll just use a default icon
+            Icon(
+                imageVector = Icons.Outlined.Folder,
+                contentDescription = category.name,
+                tint = categoryColor,
+                modifier = Modifier.size(28.dp)
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Text(
+                text = category.name,
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    }
+}
+
 @Preview(showBackground = true)
 @Composable
 fun HomeScreenPreview() {
+    // Create the ViewModel outside the composable function
+    val viewModel = HomeViewModelPreviewParameterProvider.createEmptyViewModel()
+
     DropnestTheme(darkTheme = true) {
-        HomeScreen()
+        HomeScreen(viewModel = viewModel)
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun HomeScreenWithCategoriesPreview() {
+    // Create the ViewModel outside the composable function
+    val viewModel = HomeViewModelPreviewParameterProvider.createViewModelWithCategories()
+
+    DropnestTheme(darkTheme = true) {
+        HomeScreen(viewModel = viewModel)
     }
 }
