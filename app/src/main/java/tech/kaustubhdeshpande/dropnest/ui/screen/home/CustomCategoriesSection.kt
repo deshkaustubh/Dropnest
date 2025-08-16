@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -48,15 +49,6 @@ fun CustomCategoriesSection(
     modifier: Modifier = Modifier
 ) {
     Column(modifier = modifier.fillMaxWidth()) {
-        Text(
-            text = "Custom Categories",
-            style = MaterialTheme.typography.headlineMedium,
-            color = MaterialTheme.colorScheme.onBackground,
-            modifier = Modifier.padding(horizontal = 4.dp)
-        )
-
-        Spacer(modifier = Modifier.height(16.dp))
-
         if (isLoading) {
             Box(
                 modifier = Modifier
@@ -71,34 +63,58 @@ fun CustomCategoriesSection(
             EmptyCategoriesState(onCreateCategoryClick)
         } else {
             Log.d(TAG, "Displaying ${categories.size} categories")
-            LazyVerticalGrid(
-                columns = GridCells.Fixed(2),
-                contentPadding = PaddingValues(4.dp),
-                horizontalArrangement = Arrangement.spacedBy(16.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(((categories.size + 1) / 2 * 110).dp.coerceAtMost(400.dp))
-            ) {
-                items(categories) { category ->
-                    CustomCategoryCard(
-                        category = category,
-                        onClick = {
-                            Log.d(TAG, "Category clicked: ${category.id}")
-                            onCategoryClick(category.id)
-                        },
-                        modifier = Modifier.fillMaxWidth()
-                    )
+            // Create manual grid with Column and Row to avoid LazyVerticalGrid
+            Column(modifier = Modifier.fillMaxWidth()) {
+                // Display categories in rows of 2
+                for (i in categories.indices step 2) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        // First category in the row
+                        CustomCategoryCard(
+                            category = categories[i],
+                            onClick = {
+                                Log.d(TAG, "Category clicked: ${categories[i].id}")
+                                onCategoryClick(categories[i].id)
+                            },
+                            modifier = Modifier.weight(1f)
+                        )
+
+                        // Second category in the row (if exists)
+                        if (i + 1 < categories.size) {
+                            CustomCategoryCard(
+                                category = categories[i + 1],
+                                onClick = {
+                                    Log.d(TAG, "Category clicked: ${categories[i + 1].id}")
+                                    onCategoryClick(categories[i + 1].id)
+                                },
+                                modifier = Modifier.weight(1f)
+                            )
+                        } else {
+                            // Empty space to maintain grid
+                            Spacer(modifier = Modifier.weight(1f))
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
                 }
 
-                item {
+                // Add category button
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
                     AddCategoryCard(
                         onClick = {
                             Log.d(TAG, "Create category card clicked")
                             onCreateCategoryClick()
                         },
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.weight(1f)
                     )
+
+                    // Empty space to maintain grid
+                    Spacer(modifier = Modifier.weight(1f))
                 }
             }
         }

@@ -6,14 +6,16 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.outlined.Bookmark
@@ -35,6 +37,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import tech.kaustubhdeshpande.dropnest.ui.theme.DropnestTheme
@@ -51,27 +54,29 @@ fun HomeScreen(
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
-        // Add TopAppBar here instead of separate header section
+        contentWindowInsets = WindowInsets(0, 0, 0, 0),
         topBar = {
             TopAppBar(
                 title = {
                     Column {
                         Text(
-                            text = "Your Categories",
+                            text = "DropNest",  // Changed from "Your Categories" to "DropNest"
                             style = MaterialTheme.typography.headlineMedium,
+                            fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onBackground
                         )
-                        Text(
-                            text = "Organize your drops with custom tags and colors.",
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
+//                        Text(
+//                            text = "Organize your drops with custom tags and colors.",
+//                            style = MaterialTheme.typography.bodyLarge,
+//                            color = MaterialTheme.colorScheme.onSurfaceVariant
+//                        )
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.background,
                     titleContentColor = MaterialTheme.colorScheme.onBackground
-                )
+                ),
+                modifier = Modifier.windowInsetsPadding(WindowInsets.statusBars)
             )
         },
         floatingActionButton = {
@@ -89,47 +94,52 @@ fun HomeScreen(
             }
         }
     ) { paddingValues ->
-        Column(
+        // Replace Column+verticalScroll with LazyColumn to avoid nested scrollables
+        LazyColumn(
             modifier = modifier
                 .padding(paddingValues)
                 .fillMaxSize()
                 .background(MaterialTheme.colorScheme.background)
-                .verticalScroll(rememberScrollState())
                 .padding(horizontal = 16.dp)
         ) {
-            // Header section is now in the TopAppBar
             // Add some spacing at the top
-            Spacer(modifier = Modifier.height(8.dp))
+            item { Spacer(modifier = Modifier.height(8.dp)) }
 
-            // Default categories grid - updated to use onCategoryClick
-            DefaultCategoriesGrid(
-                onSavedLinksClick = {
-                    // Navigate to category detail instead of just updating ViewModel
-                    onCategoryClick("links")
-                },
-                onNotesClick = {
-                    onCategoryClick("notes")
-                },
-                onImagesClick = {
-                    onCategoryClick("images")
-                },
-                onPdfsClick = {
-                    onCategoryClick("pdfs")
-                }
-            )
+            // Default categories grid
+            item {
+                DefaultCategoriesGrid(
+                    onSavedLinksClick = { onCategoryClick("links") },
+                    onNotesClick = { onCategoryClick("notes") },
+                    onImagesClick = { onCategoryClick("images") },
+                    onPdfsClick = { onCategoryClick("pdfs") }
+                )
+            }
 
-            Spacer(modifier = Modifier.height(32.dp))
+            item { Spacer(modifier = Modifier.height(32.dp)) }
 
-            // Custom categories section
-            CustomCategoriesSection(
-                categories = uiState.customCategories,
-                isLoading = uiState.isLoading,
-                onCategoryClick = onCategoryClick,
-                onCreateCategoryClick = onCreateCategoryClick
-            )
+            // Custom Categories Title
+            item {
+                Text(
+                    text = "Custom Categories",
+                    style = MaterialTheme.typography.headlineSmall,
+                    color = MaterialTheme.colorScheme.onBackground,
+                    modifier = Modifier.padding(bottom = 16.dp)
+                )
+            }
 
-            // Add space at the bottom to prevent FAB from covering content
-            Spacer(modifier = Modifier.height(80.dp))
+            // Custom categories section - using your original component
+            item {
+                CustomCategoriesSection(
+                    categories = uiState.customCategories,
+                    isLoading = uiState.isLoading,
+                    onCategoryClick = onCategoryClick,
+                    onCreateCategoryClick = onCreateCategoryClick,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+
+            // Space at the bottom
+            item { Spacer(modifier = Modifier.height(80.dp)) }
         }
     }
 }
