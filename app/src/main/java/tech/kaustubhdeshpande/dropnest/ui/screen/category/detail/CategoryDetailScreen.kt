@@ -15,9 +15,9 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -43,12 +43,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import androidx.core.view.WindowCompat
 import androidx.hilt.navigation.compose.hiltViewModel
+import tech.kaustubhdeshpande.dropnest.domain.model.DropType
 import tech.kaustubhdeshpande.dropnest.ui.screen.category.detail.components.AttachMediaBottomSheet
 import tech.kaustubhdeshpande.dropnest.ui.screen.category.detail.components.DropInputField
 import tech.kaustubhdeshpande.dropnest.ui.screen.category.detail.components.DropItem
 import tech.kaustubhdeshpande.dropnest.ui.screen.category.detail.components.DropNestMessage
+import tech.kaustubhdeshpande.dropnest.ui.screen.category.detail.components.ImagePreviewDialog
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -63,6 +64,9 @@ fun CategoryDetailScreen(
     val listState = rememberLazyListState()
     val context = LocalContext.current
     var showAttachSheet by remember { mutableStateOf(false) }
+
+    // Add state for image preview
+    var selectedImageUri by remember { mutableStateOf<String?>(null) }
 
     // Launch effect to load category and drops
     LaunchedEffect(categoryId) {
@@ -188,7 +192,18 @@ fun CategoryDetailScreen(
                     } else {
                         // Display drops in chronological order (oldest first)
                         items(sortedDrops) { drop ->
-                            DropItem(drop = drop)
+                            // Updated DropItem to handle media clicks
+                            DropItem(
+                                drop = drop,
+                                isFromCurrentUser = true, // Assuming all drops are from current user
+                                onMediaClick = { clickedDrop ->
+                                    // Only show preview for images
+                                    if (clickedDrop.type == DropType.IMAGE && clickedDrop.uri != null) {
+                                        selectedImageUri = clickedDrop.uri
+                                    }
+                                    // PDFs will be handled internally by the DropMediaItem component
+                                }
+                            )
                         }
                     }
 
@@ -224,6 +239,14 @@ fun CategoryDetailScreen(
                         pdfPicker.launch("application/pdf")
                         showAttachSheet = false
                     }
+                )
+            }
+
+            // Image preview dialog when an image is selected
+            selectedImageUri?.let { uri ->
+                ImagePreviewDialog(
+                    imageUri = uri,
+                    onDismiss = { selectedImageUri = null }
                 )
             }
         }
