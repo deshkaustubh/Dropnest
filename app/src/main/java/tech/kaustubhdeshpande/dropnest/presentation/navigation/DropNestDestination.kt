@@ -14,6 +14,8 @@ sealed class DropNestDestination(
     // Main vault screen
     object Vault : DropNestDestination("vault")
 
+    object Home : DropNestDestination("home")
+
     // Category screens
     object Categories : DropNestDestination("categories")
     object CreateCategory : DropNestDestination("create_category")

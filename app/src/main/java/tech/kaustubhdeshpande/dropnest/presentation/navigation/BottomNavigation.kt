@@ -34,11 +34,6 @@ fun DropNestBottomNavigation(
             title = "Categories",
             icon = Icons.Filled.Category
         ),
-        BottomNavItem(
-            route = DropNestDestination.Settings.route,
-            title = "Settings",
-            icon = Icons.Filled.Settings
-        )
     )
 
     val navBackStackEntry by navController.currentBackStackEntryAsState()

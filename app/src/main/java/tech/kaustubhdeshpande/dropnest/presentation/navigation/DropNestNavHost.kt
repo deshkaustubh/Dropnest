@@ -6,6 +6,8 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import tech.kaustubhdeshpande.dropnest.domain.model.Drop
+import tech.kaustubhdeshpande.dropnest.ui.screen.home.HomeScreen
 import tech.kaustubhdeshpande.dropnest.ui.screen.vault.VaultScreen
 import tech.kaustubhdeshpande.dropnest.ui.screen.welcome.WelcomeScreen
 
@@ -24,7 +26,7 @@ fun DropNestNavHost(
         composable(route = DropNestDestination.Welcome.route) {
             WelcomeScreen(
                 onTimeout = {
-                    navController.navigate(DropNestDestination.Vault.route) {
+                    navController.navigate(DropNestDestination.Home.route) {
                         popUpTo(DropNestDestination.Welcome.route) { inclusive = true }
                         launchSingleTop = true
                         restoreState = true
@@ -45,6 +47,18 @@ fun DropNestNavHost(
                 },
                 onSettingsClick = {
                     navController.navigate(DropNestDestination.Settings.route)
+                }
+            )
+        }
+
+        // Home Screen - new main screen of the app
+        composable(route = DropNestDestination.Home.route) {
+            HomeScreen(
+                onAddCategoryClick = {
+                    navController.navigate(DropNestDestination.CreateDrop.route)
+                },
+                onCreateCategoryClick = {
+                    navController.navigate(DropNestDestination.CreateDrop.route)
                 }
             )
         }
