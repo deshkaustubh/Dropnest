@@ -8,10 +8,16 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.ime
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -34,8 +40,10 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.core.view.WindowCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import tech.kaustubhdeshpande.dropnest.ui.screen.category.detail.components.AttachMediaBottomSheet
 import tech.kaustubhdeshpande.dropnest.ui.screen.category.detail.components.DropInputField
@@ -94,9 +102,24 @@ fun CategoryDetailScreen(
     }
 
     Scaffold(
+        // Configure Scaffold to not apply window insets automatically
+        contentWindowInsets = WindowInsets(0, 0, 0, 0),
         topBar = {
             TopAppBar(
-                title = { Text(uiState.category?.name ?: "Category") },
+                // Include both title and subtitle in the TopAppBar
+                title = {
+                    Column {
+                        Text(
+                            text = uiState.category?.name ?: "Category",
+                            style = MaterialTheme.typography.titleLarge
+                        )
+                        Text(
+                            text = "You're inside: ${uiState.category?.name ?: ""}",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                        )
+                    }
+                },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
                         Icon(
@@ -119,7 +142,9 @@ fun CategoryDetailScreen(
                     titleContentColor = MaterialTheme.colorScheme.onSurface,
                     navigationIconContentColor = MaterialTheme.colorScheme.onSurface,
                     actionIconContentColor = MaterialTheme.colorScheme.onSurface
-                )
+                ),
+                // Apply status bar insets to the top app bar
+                modifier = Modifier.windowInsetsPadding(WindowInsets.statusBars)
             )
         }
     ) { paddingValues ->
@@ -130,19 +155,13 @@ fun CategoryDetailScreen(
                 .background(MaterialTheme.colorScheme.background)
         ) {
             Column(modifier = Modifier.fillMaxSize()) {
-                // Subtitle showing current category
-                Text(
-                    text = "You're inside: ${uiState.category?.name ?: ""}",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
-                )
-
                 // Chat messages list - chronological order (oldest at top, newest at bottom)
                 LazyColumn(
                     state = listState,
                     contentPadding = PaddingValues(16.dp),
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier
+                        .weight(1f)
+                        .clipToBounds()  // Ensure content doesn't overflow
                 ) {
                     // Welcome messages (only show if no drops yet)
                     if (sortedDrops.isEmpty()) {
@@ -175,7 +194,7 @@ fun CategoryDetailScreen(
 
                     // Add some space at the bottom for better UX
                     item {
-                        Spacer(modifier = Modifier.padding(bottom = 8.dp))
+                        Spacer(modifier = Modifier.height(8.dp))
                     }
                 }
 
@@ -185,12 +204,11 @@ fun CategoryDetailScreen(
                     onTextChange = { viewModel.updateInputText(it) },
                     onSendClick = {
                         viewModel.sendDrop()
-                        // When a message is sent, scroll to the bottom to see it
                     },
                     onAttachClick = { showAttachSheet = true },
                     modifier = Modifier
                         .fillMaxWidth()
-                        .imePadding()
+                        .windowInsetsPadding(WindowInsets.navigationBars)  // Apply navigation bar insets
                 )
             }
 

@@ -5,14 +5,11 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
 import androidx.navigation.compose.rememberNavController
 import dagger.hilt.android.AndroidEntryPoint
-import tech.kaustubhdeshpande.dropnest.presentation.navigation.DropNestBottomNavigation
 import tech.kaustubhdeshpande.dropnest.presentation.navigation.DropNestNavHost
 import tech.kaustubhdeshpande.dropnest.ui.theme.DropnestTheme
 
@@ -29,14 +26,11 @@ class MainActivity : ComponentActivity() {
                 ) {
                     val navController = rememberNavController()
 
-                    Scaffold { paddingValues ->
-                        DropNestNavHost(
-                            navController = navController,
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .padding(paddingValues)
-                        )
-                    }
+                    // Remove the extra Scaffold here - it's causing additional padding
+                    DropNestNavHost(
+                        navController = navController,
+                        modifier = Modifier.fillMaxSize()
+                    )
                 }
             }
         }
