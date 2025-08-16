@@ -30,11 +30,12 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil.compose.rememberAsyncImagePainter
 import coil.request.ImageRequest
+import tech.kaustubhdeshpande.dropnest.R
 import tech.kaustubhdeshpande.dropnest.domain.model.Drop
 import tech.kaustubhdeshpande.dropnest.domain.model.DropType
 
@@ -72,30 +73,30 @@ fun DropItem(
         DateUtils.MINUTE_IN_MILLIS
     ).toString()
 
-    // User messages on right, system messages on left
     if (isSystem) {
-        // System/DropNest message - left aligned
+        // System/DropNest message - left aligned with logo
         Column(
             modifier = modifier
                 .fillMaxWidth()
                 .padding(vertical = 8.dp, horizontal = 16.dp)
         ) {
-            // Sender label
+            // Sender label with DropNest logo
             Row(
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Avatar
+                // DropNest logo avatar
                 Box(
                     contentAlignment = Alignment.Center,
                     modifier = Modifier
-                        .size(36.dp)
+                        .size(40.dp)
                         .clip(CircleShape)
-                        .background(MaterialTheme.colorScheme.tertiary)
+                        .background(Color(0xFF78C29A)) // Light green for DropNest
                 ) {
-                    Text(
-                        text = "D",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onTertiary
+                    // Using the actual logo from drawable resources
+                    Image(
+                        painter = painterResource(id = R.drawable.logo_dropnest),
+                        contentDescription = "DropNest",
+                        modifier = Modifier.size(24.dp)
                     )
                 }
 
@@ -110,7 +111,7 @@ fun DropItem(
 
             Spacer(modifier = Modifier.height(4.dp))
 
-            // Message bubble - aligned to the left with padding
+            // Message bubble - left aligned with rounded corners
             Card(
                 shape = RoundedCornerShape(
                     topStart = 4.dp,
@@ -119,10 +120,10 @@ fun DropItem(
                     bottomEnd = 16.dp
                 ),
                 colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant
+                    containerColor = Color(0xFF2A3731) // Dark green for system messages
                 ),
                 modifier = Modifier
-                    .padding(end = 64.dp, start = 8.dp)
+                    .padding(end = 64.dp, start = 48.dp)
                     .align(Alignment.Start)
             ) {
                 MessageContent(
@@ -130,12 +131,13 @@ fun DropItem(
                     uri = uri,
                     title = title,
                     type = type,
-                    timeFormatted = timeFormatted
+                    timeFormatted = timeFormatted,
+                    isUser = false
                 )
             }
         }
     } else {
-        // User message - right aligned, no avatar/sender needed
+        // User message - right aligned WITHOUT avatar (as requested)
         Column(
             modifier = modifier
                 .fillMaxWidth()
@@ -179,12 +181,9 @@ private fun MessageContent(
     isUser: Boolean = false
 ) {
     val context = LocalContext.current
-    val textColor = if (isUser) Color.White else MaterialTheme.colorScheme.onSurface
-    val linkColor = if (isUser) Color(0xFF9EE6FC) else MaterialTheme.colorScheme.primary
-    val timeColor = if (isUser)
-        Color.White.copy(alpha = 0.7f)
-    else
-        MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+    val textColor = Color.White
+    val linkColor = if (isUser) Color(0xFF9EE6FC) else Color(0xFFAED8FC)
+    val timeColor = Color.White.copy(alpha = 0.7f)
 
     Column(modifier = Modifier.padding(12.dp)) {
         // Content based on drop type
@@ -238,10 +237,7 @@ private fun MessageContent(
                         .fillMaxWidth()
                         .height(120.dp)
                         .background(
-                            color = if (isUser)
-                                Color(0xFF004A3D)
-                            else
-                                MaterialTheme.colorScheme.surface,
+                            color = if (isUser) Color(0xFF004A3D) else Color(0xFF1F2C25),
                             shape = RoundedCornerShape(8.dp)
                         )
                 ) {
@@ -251,7 +247,7 @@ private fun MessageContent(
                         Icon(
                             imageVector = Icons.Default.PictureAsPdf,
                             contentDescription = "PDF Document",
-                            tint = if (isUser) Color.White else MaterialTheme.colorScheme.tertiary,
+                            tint = Color.White,
                             modifier = Modifier.size(48.dp)
                         )
 
