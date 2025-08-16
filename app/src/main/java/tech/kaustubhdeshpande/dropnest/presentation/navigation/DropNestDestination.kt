@@ -20,6 +20,18 @@ sealed class DropNestDestination(
     object Categories : DropNestDestination("categories")
     object CreateCategory : DropNestDestination("create_category")
 
+    // Edit Category with ID parameter
+    object EditCategory : DropNestDestination(
+        route = "edit_category/{categoryId}",
+        arguments = listOf(
+            navArgument("categoryId") {
+                type = NavType.StringType
+            }
+        )
+    ) {
+        fun createRoute(categoryId: String) = "edit_category/$categoryId"
+    }
+
     // Drop screens
     object CreateDrop : DropNestDestination("create_drop")
 

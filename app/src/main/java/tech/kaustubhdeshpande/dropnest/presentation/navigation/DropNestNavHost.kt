@@ -8,6 +8,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import tech.kaustubhdeshpande.dropnest.domain.model.Drop
+import tech.kaustubhdeshpande.dropnest.ui.screen.category.CreateCategoryScreen
 import tech.kaustubhdeshpande.dropnest.ui.screen.home.HomeScreen
 import tech.kaustubhdeshpande.dropnest.ui.screen.home.HomeViewModelImpl
 import tech.kaustubhdeshpande.dropnest.ui.screen.vault.VaultScreen
@@ -56,11 +57,44 @@ fun DropNestNavHost(
         // Home Screen - new main screen of the app
         composable(route = DropNestDestination.Home.route) {
             val viewModel: HomeViewModelImpl = hiltViewModel()
-            HomeScreen(viewModel = viewModel)
+            HomeScreen(
+                viewModel = viewModel,
+                onCreateCategoryClick = {
+                    navController.navigate(DropNestDestination.CreateCategory.route)
+                },
+                onCategoryClick = { categoryId ->
+                    navController.navigate(DropNestDestination.EditCategory.createRoute(categoryId))
+                }
+            )
+        }
+
+        // Create Category screen
+        composable(route = DropNestDestination.CreateCategory.route) {
+            CreateCategoryScreen(
+                onBackClick = {
+                    navController.popBackStack()
+                },
+                onCategorySaved = {
+                    navController.popBackStack()
+                }
+            )
+        }
+
+        // Edit Category screen
+        composable(
+            route = DropNestDestination.EditCategory.route,
+            arguments = DropNestDestination.EditCategory.arguments
+        ) {
+            CreateCategoryScreen(
+                onBackClick = {
+                    navController.popBackStack()
+                },
+                onCategorySaved = {
+                    navController.popBackStack()
+                }
+            )
         }
 
         // Other routes will be implemented as we build those screens
-
-        // For now, we've included route definitions that will be used later
     }
 }

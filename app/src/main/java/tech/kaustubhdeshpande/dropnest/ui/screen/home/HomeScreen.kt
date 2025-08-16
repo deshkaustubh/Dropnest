@@ -31,6 +31,8 @@ import tech.kaustubhdeshpande.dropnest.ui.theme.DropnestTheme
 @Composable
 fun HomeScreen(
     viewModel: HomeViewModel,
+    onCreateCategoryClick: () -> Unit = {},
+    onCategoryClick: (String) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -78,8 +80,8 @@ fun HomeScreen(
             CustomCategoriesSection(
                 categories = uiState.customCategories,
                 isLoading = uiState.isLoading,
-                onCategoryClick = { viewModel.onCategoryClick(it) },
-                onCreateCategoryClick = { viewModel.onCreateCategoryClick() }
+                onCategoryClick = onCategoryClick,
+                onCreateCategoryClick = onCreateCategoryClick
             )
         }
     }
