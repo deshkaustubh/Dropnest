@@ -9,6 +9,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import tech.kaustubhdeshpande.dropnest.ui.screen.category.CreateCategoryScreen
+import tech.kaustubhdeshpande.dropnest.ui.screen.category.detail.CategoryDetailScreen
 import tech.kaustubhdeshpande.dropnest.ui.screen.home.HomeScreen
 import tech.kaustubhdeshpande.dropnest.ui.screen.home.HomeViewModelImpl
 import tech.kaustubhdeshpande.dropnest.ui.screen.vault.VaultScreen
@@ -67,8 +68,9 @@ fun DropNestNavHost(
                     navController.navigate(DropNestDestination.CreateCategory.route)
                 },
                 onCategoryClick = { categoryId ->
-                    Log.d(TAG, "Navigating to Edit Category screen for category: $categoryId")
-                    navController.navigate(DropNestDestination.EditCategory.createRoute(categoryId))
+                    // FIX: Navigate to CategoryDetail instead of EditCategory
+                    Log.d(TAG, "Navigating to Category Detail screen for category: $categoryId")
+                    navController.navigate(DropNestDestination.CategoryDetail.createRoute(categoryId))
                 }
             )
         }
@@ -100,6 +102,26 @@ fun DropNestNavHost(
                 onCategorySaved = {
                     Log.d(TAG, "Category updated, navigating back")
                     navController.popBackStack()
+                }
+            )
+        }
+
+        // Category Detail screen
+        composable(
+            route = DropNestDestination.CategoryDetail.route,
+            arguments = DropNestDestination.CategoryDetail.arguments
+        ) { backStackEntry ->
+            val categoryId = backStackEntry.arguments?.getString("categoryId") ?: ""
+            Log.d(TAG, "Navigating to Category Detail screen for category: $categoryId")
+            CategoryDetailScreen(
+                categoryId = categoryId,
+                onBackClick = {
+                    Log.d(TAG, "Navigating back from Category Detail")
+                    navController.popBackStack()
+                },
+                onSettingsClick = {
+                    Log.d(TAG, "Navigating to Settings from Category Detail")
+                    navController.navigate(DropNestDestination.Settings.route)
                 }
             )
         }

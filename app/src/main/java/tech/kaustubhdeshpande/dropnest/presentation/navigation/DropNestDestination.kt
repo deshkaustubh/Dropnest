@@ -49,4 +49,16 @@ sealed class DropNestDestination(
 
     // Settings screen
     object Settings : DropNestDestination("settings")
+
+    // Category Detail with ID parameter
+    object CategoryDetail : DropNestDestination(
+        route = "category_detail/{categoryId}",
+        arguments = listOf(
+            navArgument("categoryId") {
+                type = NavType.StringType
+            }
+        )
+    ) {
+        fun createRoute(categoryId: String) = "category_detail/$categoryId"
+    }
 }

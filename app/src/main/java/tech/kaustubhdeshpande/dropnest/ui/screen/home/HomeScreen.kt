@@ -75,12 +75,21 @@ fun HomeScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Default categories grid
+            // Default categories grid - updated to use onCategoryClick
             DefaultCategoriesGrid(
-                onSavedLinksClick = { viewModel.onDefaultCategoryClick(DefaultCategoryType.SAVED_LINKS) },
-                onNotesClick = { viewModel.onDefaultCategoryClick(DefaultCategoryType.NOTES) },
-                onImagesClick = { viewModel.onDefaultCategoryClick(DefaultCategoryType.IMAGES) },
-                onPdfsClick = { viewModel.onDefaultCategoryClick(DefaultCategoryType.PDFS) }
+                onSavedLinksClick = {
+                    // Navigate to category detail instead of just updating ViewModel
+                    onCategoryClick("links")
+                },
+                onNotesClick = {
+                    onCategoryClick("notes")
+                },
+                onImagesClick = {
+                    onCategoryClick("images")
+                },
+                onPdfsClick = {
+                    onCategoryClick("pdfs")
+                }
             )
 
             Spacer(modifier = Modifier.height(32.dp))
