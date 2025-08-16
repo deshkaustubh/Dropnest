@@ -150,7 +150,19 @@ fun CategoryDetailScreen(
                     }
                 },
                 navigationIcon = {
-                    IconButton(onClick = onBackClick) {
+                    // Track last click time to implement debounce
+                    var lastClickTime by remember { mutableStateOf(0L) }
+                    val debounceTime = 300L // milliseconds
+
+                    IconButton(
+                        onClick = {
+                            val currentTime = System.currentTimeMillis()
+                            if (currentTime - lastClickTime > debounceTime) {
+                                lastClickTime = currentTime
+                                onBackClick()
+                            }
+                        }
+                    ) {
                         Icon(
                             imageVector = Icons.Default.ArrowBack,
                             contentDescription = "Back"
