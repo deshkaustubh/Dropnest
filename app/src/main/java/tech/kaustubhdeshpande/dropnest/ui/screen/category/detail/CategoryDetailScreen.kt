@@ -12,12 +12,11 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.statusBars
-import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -44,12 +43,13 @@ import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import tech.kaustubhdeshpande.dropnest.domain.model.Drop
 import tech.kaustubhdeshpande.dropnest.domain.model.DropType
 import tech.kaustubhdeshpande.dropnest.ui.screen.category.detail.components.AttachMediaBottomSheet
 import tech.kaustubhdeshpande.dropnest.ui.screen.category.detail.components.DropInputField
 import tech.kaustubhdeshpande.dropnest.ui.screen.category.detail.components.DropItem
 import tech.kaustubhdeshpande.dropnest.ui.screen.category.detail.components.DropNestMessage
-import tech.kaustubhdeshpande.dropnest.ui.screen.category.detail.components.ImagePreviewDialog
+import tech.kaustubhdeshpande.dropnest.ui.screen.category.detail.components.FullScreenImageDialog
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -65,8 +65,8 @@ fun CategoryDetailScreen(
     val context = LocalContext.current
     var showAttachSheet by remember { mutableStateOf(false) }
 
-    // Add state for image preview
-    var selectedImageUri by remember { mutableStateOf<String?>(null) }
+    // State for the selected image for preview
+    var selectedImageDrop by remember { mutableStateOf<Drop?>(null) }
 
     // Launch effect to load category and drops
     LaunchedEffect(categoryId) {
@@ -192,16 +192,15 @@ fun CategoryDetailScreen(
                     } else {
                         // Display drops in chronological order (oldest first)
                         items(sortedDrops) { drop ->
-                            // Updated DropItem to handle media clicks
                             DropItem(
                                 drop = drop,
-                                isFromCurrentUser = true, // Assuming all drops are from current user
+                                isFromCurrentUser = true,
                                 onMediaClick = { clickedDrop ->
-                                    // Only show preview for images
-                                    if (clickedDrop.type == DropType.IMAGE && clickedDrop.uri != null) {
-                                        selectedImageUri = clickedDrop.uri
+                                    // Handle media click based on type
+                                    if (clickedDrop.type == DropType.IMAGE) {
+                                        // Set the selected image to show the full screen preview
+                                        selectedImageDrop = clickedDrop
                                     }
-                                    // PDFs will be handled internally by the DropMediaItem component
                                 }
                             )
                         }
@@ -242,12 +241,14 @@ fun CategoryDetailScreen(
                 )
             }
 
-            // Image preview dialog when an image is selected
-            selectedImageUri?.let { uri ->
-                ImagePreviewDialog(
-                    imageUri = uri,
-                    onDismiss = { selectedImageUri = null }
-                )
+            // Show full screen image dialog when an image is selected
+            selectedImageDrop?.let { drop ->
+                drop.uri?.let { imageUri ->
+                    FullScreenImageDialog(
+                        imageUri = imageUri,
+                        onDismiss = { selectedImageDrop = null }
+                    )
+                }
             }
         }
     }
