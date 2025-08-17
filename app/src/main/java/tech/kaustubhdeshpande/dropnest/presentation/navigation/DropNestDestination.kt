@@ -61,4 +61,14 @@ sealed class DropNestDestination(
     ) {
         fun createRoute(categoryId: String) = "category_detail/$categoryId"
     }
+
+    // Category Filter Screen
+    object CategoryFilter : DropNestDestination(
+        route = "category_filter/{categoryId}",
+        arguments = listOf(
+            navArgument("categoryId") { type = NavType.StringType }
+        )
+    ) {
+        fun createRoute(categoryId: String) = "category_filter/$categoryId"
+    }
 }

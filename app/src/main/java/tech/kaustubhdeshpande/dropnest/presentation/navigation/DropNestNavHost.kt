@@ -2,6 +2,9 @@ package tech.kaustubhdeshpande.dropnest.presentation.navigation
 
 import android.util.Log
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
@@ -10,6 +13,9 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import tech.kaustubhdeshpande.dropnest.ui.screen.category.CreateCategoryScreen
 import tech.kaustubhdeshpande.dropnest.ui.screen.category.detail.CategoryDetailScreen
+import tech.kaustubhdeshpande.dropnest.ui.screen.category.detail.CategoryDetailViewModel
+import tech.kaustubhdeshpande.dropnest.ui.screen.categoryfilter.CategoryFilterScreen
+import tech.kaustubhdeshpande.dropnest.ui.screen.categoryfilter.DropTabType
 import tech.kaustubhdeshpande.dropnest.ui.screen.home.HomeScreen
 import tech.kaustubhdeshpande.dropnest.ui.screen.home.HomeViewModelImpl
 import tech.kaustubhdeshpande.dropnest.ui.screen.vault.VaultScreen
@@ -74,7 +80,11 @@ fun DropNestNavHost(
                     },
                     onCategoryClick = { categoryId ->
                         Log.d(TAG, "Navigating to Category Detail screen for category: $categoryId")
-                        safeNavigation.navigateTo(DropNestDestination.CategoryDetail.createRoute(categoryId))
+                        safeNavigation.navigateTo(
+                            DropNestDestination.CategoryDetail.createRoute(
+                                categoryId
+                            )
+                        )
                     }
                 )
             }
@@ -123,6 +133,28 @@ fun DropNestNavHost(
                         Log.d(TAG, "Navigating back from Category Detail")
                         safeNavigation.popBackStack()
                     }
+                )
+            }
+
+            // for the media links and docs navigation = Category Filter Screen
+            composable(
+                route = DropNestDestination.CategoryFilter.route,
+                arguments = DropNestDestination.CategoryFilter.arguments
+            ) { backStackEntry ->
+                val categoryId = backStackEntry.arguments?.getString("categoryId") ?: return@composable
+                val viewModel: CategoryDetailViewModel = hiltViewModel()
+                val uiState by viewModel.uiState.collectAsState()
+
+                LaunchedEffect(categoryId) {
+                    viewModel.loadCategory(categoryId)
+                    viewModel.loadDrops(categoryId)
+                }
+
+                CategoryFilterScreen(
+                    categoryName = uiState.category?.name ?: "",
+                    drops = uiState.drops,
+                    initialTab = DropTabType.Media,
+                    onBackClick = { safeNavigation.popBackStack() },
                 )
             }
 

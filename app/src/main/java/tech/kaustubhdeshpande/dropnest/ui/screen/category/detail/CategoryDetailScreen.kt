@@ -35,6 +35,8 @@ import androidx.core.content.FileProvider
 import androidx.hilt.navigation.compose.hiltViewModel
 import tech.kaustubhdeshpande.dropnest.domain.model.Drop
 import tech.kaustubhdeshpande.dropnest.domain.model.DropType
+import tech.kaustubhdeshpande.dropnest.presentation.navigation.DropNestDestination
+import tech.kaustubhdeshpande.dropnest.presentation.navigation.LocalSafeNavigation
 import tech.kaustubhdeshpande.dropnest.ui.screen.category.detail.components.*
 import java.io.File
 
@@ -47,6 +49,7 @@ fun CategoryDetailScreen(
     viewModel: CategoryDetailViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val safeNavigation = LocalSafeNavigation.current
     val listState = rememberLazyListState()
     val context = LocalContext.current
     var showAttachSheet by remember { mutableStateOf(false) }
@@ -80,10 +83,17 @@ fun CategoryDetailScreen(
     }
 
     val documentMimeTypes = arrayOf(
-        "application/pdf", "application/msword", "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-        "application/vnd.ms-excel", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        "application/vnd.ms-powerpoint", "application/vnd.openxmlformats-officedocument.presentationml.presentation",
-        "text/plain", "application/rtf", "application/vnd.oasis.opendocument.text", "application/vnd.oasis.opendocument.spreadsheet"
+        "application/pdf",
+        "application/msword",
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        "application/vnd.ms-excel",
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        "application/vnd.ms-powerpoint",
+        "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+        "text/plain",
+        "application/rtf",
+        "application/vnd.oasis.opendocument.text",
+        "application/vnd.oasis.opendocument.spreadsheet"
     )
     val documentPicker = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenDocument()
@@ -261,8 +271,14 @@ fun CategoryDetailScreen(
                                     )
                                     DropdownMenuItem(
                                         text = { Text("Media, Links and Docs") },
-                                        onClick = { showMenu = false },
-                                        enabled = false
+                                        onClick = {
+                                            showMenu = false
+                                            safeNavigation.navigateTo(
+                                                DropNestDestination.CategoryFilter.createRoute(
+                                                    categoryId = categoryId
+                                                )
+                                            )
+                                        }
                                     )
                                 }
                             }
@@ -305,7 +321,8 @@ fun CategoryDetailScreen(
                         itemsIndexed(sortedDrops, key = { _, d -> d.id }) { idx, drop ->
                             val isSelected = drop.id == selectedDropId
                             val isMatching = searchMode && searchResults.contains(idx)
-                            val isCurrentSearchResult = searchMode && searchResults.isNotEmpty() && searchResults[currentSearchIndex] == idx
+                            val isCurrentSearchResult =
+                                searchMode && searchResults.isNotEmpty() && searchResults[currentSearchIndex] == idx
                             DropItem(
                                 drop = drop,
                                 isFromCurrentUser = true,
