@@ -7,6 +7,8 @@ import android.webkit.URLUtil
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -36,14 +38,21 @@ class CategoryDetailViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(CategoryDetailState())
     val uiState: StateFlow<CategoryDetailState> = _uiState.asStateFlow()
 
+    private var loadCategoryJob : Job? = null
+    private var loadDropsJob : Job? = null
+
     fun loadCategory(categoryId: String) {
-        viewModelScope.launch {
+        loadCategoryJob?.cancel()
+        loadCategoryJob =  viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
             try {
                 val category = getCategoryByIdUseCase(categoryId)
                 category?.let {
                     _uiState.update { state -> state.copy(category = it) }
                 }
+            } catch (e: CancellationException) {
+                // Don't log cancellation as error
+                throw e
             } catch (e: Exception) {
                 Log.e(TAG, "Error loading category", e)
             } finally {
@@ -53,15 +62,25 @@ class CategoryDetailViewModel @Inject constructor(
     }
 
     fun loadDrops(categoryId: String) {
-        viewModelScope.launch {
+        loadDropsJob?.cancel()
+        loadDropsJob = viewModelScope.launch {
             try {
                 getDropsByCategoryUseCase(categoryId).collect { drops ->
                     _uiState.update { state -> state.copy(drops = drops) }
                 }
+            } catch (e: CancellationException) {
+                // Don't log cancellation as error
+                throw e
             } catch (e: Exception) {
                 Log.e(TAG, "Error loading drops", e)
             }
         }
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        loadCategoryJob?.cancel()
+        loadDropsJob?.cancel()
     }
 
     fun updateInputText(text: String) {
