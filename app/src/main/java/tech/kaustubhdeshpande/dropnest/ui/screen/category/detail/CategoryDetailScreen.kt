@@ -163,7 +163,9 @@ fun CategoryDetailScreen(
                                     }
                                     selectedDropId = null
                                 },
-                                onDelete = { showDeleteDialog = true },
+                                onDelete = {
+                                    showDeleteDialog = true // Only open dialog!
+                                },
                                 onMore = { /* TODO: More options */ }
                             )
                         }
@@ -172,7 +174,9 @@ fun CategoryDetailScreen(
                             ActionBarMedia(
                                 onClose = { selectedDropId = null },
                                 onShare = { shareDrop(context, selectedDrop) },
-                                onDelete = { showDeleteDialog = true },
+                                onDelete = {
+                                    showDeleteDialog = true // Only open dialog!
+                                },
                                 onMore = { /* TODO: More options */ }
                             )
                         }
@@ -181,7 +185,7 @@ fun CategoryDetailScreen(
                             ActionBarTextOrLink(
                                 onClose = { selectedDropId = null },
                                 onCopy = { selectedDropId = null },
-                                onDelete = { showDeleteDialog = true },
+                                onDelete = { showDeleteDialog = true }, // Only open dialog!
                                 onMore = { /* TODO: More options */ }
                             )
                         }
@@ -309,7 +313,7 @@ fun CategoryDetailScreen(
                 DeleteConfirmationDialog(
                     onDismiss = { showDeleteDialog = false },
                     onDelete = {
-                        // TODO: delete logic for selectedDrop.id
+                        viewModel.deleteDropById(selectedDrop) // Actually delete here!
                         showDeleteDialog = false
                         selectedDropId = null
                     }
@@ -448,7 +452,6 @@ private fun DeleteConfirmationDialog(
     )
 }
 
-
 fun shareDrop(context: Context, drop: Drop) {
     when (drop.type) {
         DropType.IMAGE, DropType.DOCUMENT -> {
@@ -501,7 +504,8 @@ fun shareDrop(context: Context, drop: Drop) {
         }
 
         else -> {
-            Toast.makeText(context, "Sharing this type is not supported.", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, "Sharing this type is not supported.", Toast.LENGTH_SHORT)
+                .show()
         }
     }
 }

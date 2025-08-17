@@ -20,7 +20,9 @@ import tech.kaustubhdeshpande.dropnest.domain.model.DropType
 import tech.kaustubhdeshpande.dropnest.domain.usecase.category.GetCategoryByIdUseCase
 import tech.kaustubhdeshpande.dropnest.domain.usecase.drop.CreateDropUseCase
 import tech.kaustubhdeshpande.dropnest.domain.usecase.drop.GetDropsByCategoryUseCase
+import tech.kaustubhdeshpande.dropnest.domain.usecase.drop.DeleteDropUseCase
 import tech.kaustubhdeshpande.dropnest.util.FileManager
+import java.io.File
 import java.util.UUID
 import javax.inject.Inject
 
@@ -31,7 +33,8 @@ class CategoryDetailViewModel @Inject constructor(
     application: Application,
     private val getCategoryByIdUseCase: GetCategoryByIdUseCase,
     private val getDropsByCategoryUseCase: GetDropsByCategoryUseCase,
-    private val createDropUseCase: CreateDropUseCase
+    private val createDropUseCase: CreateDropUseCase,
+    private val deleteDropUseCase: DeleteDropUseCase
 ) : AndroidViewModel(application) {
 
     private val fileManager = FileManager(getApplication())
@@ -51,7 +54,6 @@ class CategoryDetailViewModel @Inject constructor(
                     _uiState.update { state -> state.copy(category = it) }
                 }
             } catch (e: CancellationException) {
-                // Don't log cancellation as error
                 throw e
             } catch (e: Exception) {
                 Log.e(TAG, "Error loading category", e)
@@ -69,7 +71,6 @@ class CategoryDetailViewModel @Inject constructor(
                     _uiState.update { state -> state.copy(drops = drops) }
                 }
             } catch (e: CancellationException) {
-                // Don't log cancellation as error
                 throw e
             } catch (e: Exception) {
                 Log.e(TAG, "Error loading drops", e)
@@ -152,7 +153,7 @@ class CategoryDetailViewModel @Inject constructor(
                         type = DropType.IMAGE,
                         text = null,
                         title = "Image",
-                        uri = savedFilePath, // Use the saved file path
+                        uri = savedFilePath,
                         categoryId = categoryId,
                         timestamp = System.currentTimeMillis(),
                         isPinned = false,
@@ -172,7 +173,7 @@ class CategoryDetailViewModel @Inject constructor(
     }
 
     fun savePdfDrop(sourceUriString: String) {
-        saveDocumentDrop(sourceUriString) // Redirect to more general document handler
+        saveDocumentDrop(sourceUriString)
     }
 
     fun saveDocumentDrop(sourceUriString: String) {
@@ -186,12 +187,10 @@ class CategoryDetailViewModel @Inject constructor(
 
                 val sourceUri = Uri.parse(sourceUriString)
 
-                // Get file metadata
                 val mimeType = fileManager.getMimeType(sourceUri)
                 val fileName = fileManager.getFileName(sourceUri) ?: "Document"
                 val documentType = fileManager.getDocumentTypeName(mimeType)
 
-                // Save the file to app storage in "documents" directory
                 val savedFilePath = fileManager.saveFileToAppStorage(sourceUri, "documents")
 
                 if (savedFilePath != null) {
@@ -204,7 +203,7 @@ class CategoryDetailViewModel @Inject constructor(
                         categoryId = categoryId,
                         timestamp = System.currentTimeMillis(),
                         isPinned = false,
-                        tags = listOf(documentType), // Add document type as a tag
+                        tags = listOf(documentType),
                         mimeType = mimeType
                     )
 
@@ -215,6 +214,34 @@ class CategoryDetailViewModel @Inject constructor(
                 }
             } catch (e: Exception) {
                 Log.e(TAG, "Exception while saving document drop: ${e.message}", e)
+            }
+        }
+    }
+
+    /**
+     * Deletes a drop by id (and removes the file from storage if needed).
+     */
+    fun deleteDropById(drop: Drop) {
+        viewModelScope.launch {
+            try {
+                // If it's a media/document, try to delete the file as well
+                if (drop.type == DropType.IMAGE || drop.type == DropType.DOCUMENT || drop.type == DropType.VIDEO || drop.type == DropType.AUDIO) {
+                    drop.uri?.let { uriStr ->
+                        try {
+                            val file = File(Uri.parse(uriStr).path ?: uriStr)
+                            if (file.exists()) {
+                                val deleted = file.delete()
+                                Log.d(TAG, "Deleted file $uriStr: $deleted")
+                            }
+                        } catch (e: Exception) {
+                            Log.e(TAG, "Error deleting file for drop: ${e.message}", e)
+                        }
+                    }
+                }
+                deleteDropUseCase(drop.id)
+                // The UI will update automatically due to the drops flow
+            } catch (e: Exception) {
+                Log.e(TAG, "Error deleting drop: ${e.message}", e)
             }
         }
     }
