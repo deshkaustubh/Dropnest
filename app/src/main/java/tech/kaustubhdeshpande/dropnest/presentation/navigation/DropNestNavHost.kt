@@ -37,7 +37,6 @@ fun DropNestNavHost(
             composable(route = DropNestDestination.Welcome.route) {
                 WelcomeScreen(
                     onTimeout = {
-                        // Use safe navigation instead of direct NavController
                         safeNavigation.navigateTo(DropNestDestination.Home.route) {
                             popUpTo(DropNestDestination.Welcome.route) { inclusive = true }
                             launchSingleTop = true
@@ -123,11 +122,6 @@ fun DropNestNavHost(
                     onBackClick = {
                         Log.d(TAG, "Navigating back from Category Detail")
                         safeNavigation.popBackStack()
-                    },
-                    onSettingsClick = {
-                        // Navigate to EditCategory screen with current categoryId
-                        Log.d(TAG, "Navigating to Edit Category screen from Category Detail for category: $categoryId")
-                        safeNavigation.navigateTo(DropNestDestination.EditCategory.createRoute(categoryId))
                     }
                 )
             }

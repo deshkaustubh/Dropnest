@@ -91,7 +91,6 @@ class FileManager(private val context: Context) {
                 if (!fileName.isNullOrEmpty() && fileName.contains(".")) {
                     return fileName.substring(fileName.lastIndexOf(".") + 1)
                 }
-
                 // Try to extract extension from the URI path
                 uri.path?.let { path ->
                     if (path.contains(".")) {
@@ -156,17 +155,28 @@ class FileManager(private val context: Context) {
     }
 
     /**
-     * Gets a display name for a document type based on MIME type
+     * Gets a display name for a document type based on MIME type and file extension
      */
-    fun getDocumentTypeName(mimeType: String?): String {
+    fun getDocumentTypeName(uri: Uri, mimeType: String?): String {
+        val ext = getFileExtension(uri).lowercase()
         return when {
-            mimeType == null -> "Document"
-            mimeType.contains("pdf") -> "PDF"
-            mimeType.contains("word") || mimeType.contains("document") -> "Word Document"
-            mimeType.contains("excel") || mimeType.contains("sheet") -> "Spreadsheet"
-            mimeType.contains("powerpoint") || mimeType.contains("presentation") -> "Presentation"
-            mimeType.contains("text/plain") -> "Text File"
-            else -> "Document"
+            mimeType == null && ext.isBlank() -> "DOC"
+            // IMAGE
+            mimeType?.startsWith("image") == true || ext in listOf("jpg", "jpeg", "png", "gif", "webp", "bmp", "heic") -> "IMG"
+            // PDF
+            mimeType?.contains("pdf") == true || ext == "pdf" -> "PDF"
+            // WORD
+            mimeType?.contains("msword") == true || ext == "doc" -> "DOC"
+            mimeType?.contains("officedocument.wordprocessingml.document") == true || ext == "docx" -> "DOC"
+            // EXCEL
+            mimeType?.contains("excel") == true || mimeType?.contains("sheet") == true || ext in listOf("xls", "xlsx", "csv") -> "Excel"
+            // POWERPOINT
+            mimeType?.contains("powerpoint") == true || mimeType?.contains("presentation") == true || ext in listOf("ppt", "pptx") -> "PPT"
+            // TEXT
+            mimeType?.contains("text/plain") == true || ext in listOf("txt", "md", "rtf") -> "TXT"
+            // ARCHIVE
+            ext in listOf("zip", "rar", "7z", "tar", "gz") -> "Archive"
+            else -> "DOC"
         }
     }
 }

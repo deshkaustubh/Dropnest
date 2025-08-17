@@ -157,7 +157,7 @@ class CategoryDetailViewModel @Inject constructor(
                         categoryId = categoryId,
                         timestamp = System.currentTimeMillis(),
                         isPinned = false,
-                        tags = emptyList(),
+                        tags = listOf("Image"),
                         mimeType = mimeType
                     )
 
@@ -189,7 +189,7 @@ class CategoryDetailViewModel @Inject constructor(
 
                 val mimeType = fileManager.getMimeType(sourceUri)
                 val fileName = fileManager.getFileName(sourceUri) ?: "Document"
-                val documentType = fileManager.getDocumentTypeName(mimeType)
+                val documentType = fileManager.getDocumentTypeName(sourceUri, mimeType)
 
                 val savedFilePath = fileManager.saveFileToAppStorage(sourceUri, "documents")
 
@@ -207,7 +207,7 @@ class CategoryDetailViewModel @Inject constructor(
                         mimeType = mimeType
                     )
 
-                    Log.d(TAG, "Created document drop with ID: ${drop.id}, path: $savedFilePath, type: $mimeType")
+                    Log.d(TAG, "Created document drop with ID: ${drop.id}, path: $savedFilePath, type: $mimeType, label: $documentType")
                     saveDrop(drop)
                 } else {
                     Log.e(TAG, "Failed to save document to internal storage: savedFilePath is null")

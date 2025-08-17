@@ -12,61 +12,30 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.calculateEndPadding
-import androidx.compose.foundation.layout.calculateStartPadding
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.ContentCopy
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.filled.Share
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.LayoutCoordinates
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.core.content.FileProvider
 import androidx.hilt.navigation.compose.hiltViewModel
 import tech.kaustubhdeshpande.dropnest.domain.model.Drop
 import tech.kaustubhdeshpande.dropnest.domain.model.DropType
-import tech.kaustubhdeshpande.dropnest.ui.screen.category.detail.components.AttachMediaBottomSheet
-import tech.kaustubhdeshpande.dropnest.ui.screen.category.detail.components.DropInputField
-import tech.kaustubhdeshpande.dropnest.ui.screen.category.detail.components.DropItem
-import tech.kaustubhdeshpande.dropnest.ui.screen.category.detail.components.DropNestMessage
-import tech.kaustubhdeshpande.dropnest.ui.screen.category.detail.components.FullScreenImageDialog
+import tech.kaustubhdeshpande.dropnest.ui.screen.category.detail.components.*
 import java.io.File
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -74,7 +43,6 @@ import java.io.File
 fun CategoryDetailScreen(
     categoryId: String,
     onBackClick: () -> Unit,
-    onSettingsClick: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: CategoryDetailViewModel = hiltViewModel()
 ) {
@@ -84,29 +52,38 @@ fun CategoryDetailScreen(
     var showAttachSheet by remember { mutableStateOf(false) }
     var selectedImageDrop by remember { mutableStateOf<Drop?>(null) }
 
-    // SINGLE selection state (ID or null)
+    // SEARCH STATE
+    var searchMode by remember { mutableStateOf(false) }
+    var searchQuery by remember { mutableStateOf("") }
+    var searchResults by remember { mutableStateOf(listOf<Int>()) }
+    var currentSearchIndex by remember { mutableStateOf(0) }
+
+    // SELECTION STATE
     var selectedDropId by remember { mutableStateOf<String?>(null) }
-    // Delete dialog visibility
     var showDeleteDialog by remember { mutableStateOf(false) }
 
-    // Back press disables selection mode
-    BackHandler(enabled = selectedDropId != null) {
-        selectedDropId = null
+    // MENU STATE
+    var showMenu by remember { mutableStateOf(false) }
+    var menuCoordinates by remember { mutableStateOf<LayoutCoordinates?>(null) }
+    val density = LocalDensity.current
+
+    // Back: exit search or clear selection
+    BackHandler(enabled = selectedDropId != null || searchMode) {
+        if (searchMode) {
+            searchMode = false
+            searchQuery = ""
+            searchResults = emptyList()
+            currentSearchIndex = 0
+        } else {
+            selectedDropId = null
+        }
     }
 
-    // Document/image pickers (unchanged)
     val documentMimeTypes = arrayOf(
-        "application/pdf",
-        "application/msword",
-        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-        "application/vnd.ms-excel",
-        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        "application/vnd.ms-powerpoint",
-        "application/vnd.openxmlformats-officedocument.presentationml.presentation",
-        "text/plain",
-        "application/rtf",
-        "application/vnd.oasis.opendocument.text",
-        "application/vnd.oasis.opendocument.spreadsheet"
+        "application/pdf", "application/msword", "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        "application/vnd.ms-excel", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        "application/vnd.ms-powerpoint", "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+        "text/plain", "application/rtf", "application/vnd.oasis.opendocument.text", "application/vnd.oasis.opendocument.spreadsheet"
     )
     val documentPicker = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenDocument()
@@ -132,10 +109,37 @@ fun CategoryDetailScreen(
         viewModel.loadDrops(categoryId)
     }
 
-    // Chronological sort + auto-scroll
     val sortedDrops = remember(uiState.drops) { uiState.drops.sortedBy { it.timestamp } }
-    LaunchedEffect(sortedDrops.size) {
-        if (sortedDrops.isNotEmpty()) listState.scrollToItem(sortedDrops.size - 1)
+
+    // SEARCH LOGIC - FIXED: Only match doc file names, not URI, for DropType.DOCUMENT
+    LaunchedEffect(searchQuery, sortedDrops, searchMode) {
+        if (searchMode && searchQuery.isNotBlank()) {
+            val q = searchQuery.trim().lowercase()
+            val indexes = sortedDrops.mapIndexedNotNull { idx, drop ->
+                when (drop.type) {
+                    DropType.DOCUMENT -> {
+                        val fileName = drop.title ?: drop.uri?.substringAfterLast('/') ?: ""
+                        if (fileName.contains(q, ignoreCase = true)) idx else null
+                    }
+                    else -> {
+                        if ((drop.text?.contains(q, ignoreCase = true) == true)
+                            || (drop.title?.contains(q, ignoreCase = true) == true)
+                        ) idx else null
+                    }
+                }
+            }
+            searchResults = indexes
+            currentSearchIndex = 0
+        } else {
+            searchResults = emptyList()
+            currentSearchIndex = 0
+        }
+    }
+
+    LaunchedEffect(currentSearchIndex, searchResults, searchMode) {
+        if (searchMode && searchResults.isNotEmpty() && currentSearchIndex in searchResults.indices) {
+            listState.animateScrollToItem(searchResults[currentSearchIndex])
+        }
     }
 
     val clipboardManager = LocalClipboardManager.current
@@ -146,62 +150,131 @@ fun CategoryDetailScreen(
     Scaffold(
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
         topBar = {
-            Crossfade(targetState = selectedDropId != null, label = "selectionBar") { selecting ->
-                if (selecting) {
-                    when (selectedDrop?.type) {
-                        DropType.NOTE, DropType.LINK -> {
-                            ActionBarTextOrLink(
-                                onClose = { selectedDropId = null },
-                                onCopy = {
-                                    val textToCopy = selectedDrop.text ?: selectedDrop.uri.orEmpty()
-                                    if (textToCopy.isNotBlank()) {
-                                        clipboardManager.setText(
-                                            androidx.compose.ui.text.AnnotatedString(
-                                                textToCopy
+            when {
+                searchMode -> {
+                    SearchAppBar(
+                        searchQuery = searchQuery,
+                        onQueryChange = { searchQuery = it },
+                        onBack = {
+                            searchMode = false
+                            searchQuery = ""
+                            searchResults = emptyList()
+                            currentSearchIndex = 0
+                        },
+                        resultCount = searchResults.size,
+                        currentIndex = if (searchResults.isNotEmpty()) currentSearchIndex + 1 else 0,
+                        onPrev = {
+                            if (searchResults.isNotEmpty()) {
+                                currentSearchIndex =
+                                    (currentSearchIndex - 1 + searchResults.size) % searchResults.size
+                            }
+                        },
+                        onNext = {
+                            if (searchResults.isNotEmpty()) {
+                                currentSearchIndex = (currentSearchIndex + 1) % searchResults.size
+                            }
+                        }
+                    )
+                }
+                selectedDropId != null -> {
+                    Crossfade(targetState = selectedDrop?.type, label = "selectionBar") { type ->
+                        when (type) {
+                            DropType.NOTE, DropType.LINK -> {
+                                ActionBarTextOrLink(
+                                    onClose = { selectedDropId = null },
+                                    onCopy = {
+                                        val textToCopy =
+                                            selectedDrop?.text ?: selectedDrop?.uri.orEmpty()
+                                        if (textToCopy.isNotBlank()) {
+                                            clipboardManager.setText(
+                                                androidx.compose.ui.text.AnnotatedString(textToCopy)
                                             )
-                                        )
-                                    }
-                                    selectedDropId = null
-                                },
-                                onDelete = {
-                                    showDeleteDialog = true // Only open dialog!
-                                },
-                                onMore = { /* TODO: More options */ }
-                            )
-                        }
-
-                        DropType.IMAGE, DropType.DOCUMENT -> {
-                            ActionBarMedia(
-                                onClose = { selectedDropId = null },
-                                onShare = { shareDrop(context, selectedDrop) },
-                                onDelete = {
-                                    showDeleteDialog = true // Only open dialog!
-                                },
-                                onMore = { /* TODO: More options */ }
-                            )
-                        }
-
-                        else -> {
-                            ActionBarTextOrLink(
-                                onClose = { selectedDropId = null },
-                                onCopy = { selectedDropId = null },
-                                onDelete = { showDeleteDialog = true }, // Only open dialog!
-                                onMore = { /* TODO: More options */ }
-                            )
+                                        }
+                                        selectedDropId = null
+                                    },
+                                    onDelete = { showDeleteDialog = true },
+                                    onMore = { }
+                                )
+                            }
+                            DropType.IMAGE, DropType.DOCUMENT -> {
+                                ActionBarMedia(
+                                    onClose = { selectedDropId = null },
+                                    onShare = { selectedDrop?.let { shareDrop(context, it) } },
+                                    onDelete = { showDeleteDialog = true },
+                                    onMore = { }
+                                )
+                            }
+                            else -> {
+                                ActionBarTextOrLink(
+                                    onClose = { selectedDropId = null },
+                                    onCopy = { selectedDropId = null },
+                                    onDelete = { showDeleteDialog = true },
+                                    onMore = { }
+                                )
+                            }
                         }
                     }
-                } else {
-                    NormalCategoryTopBarUI(
-                        title = uiState.category?.name ?: "Category",
-                        subtitle = uiState.category?.name?.let { "You're inside: $it" } ?: "",
-                        onBack = onBackClick,
-                        onSettings = onSettingsClick
+                }
+                else -> {
+                    TopAppBar(
+                        title = {
+                            Column {
+                                Text(
+                                    uiState.category?.name ?: "Category",
+                                    style = MaterialTheme.typography.titleLarge
+                                )
+                                if (!uiState.category?.name.isNullOrBlank()) {
+                                    Text(
+                                        text = "You're inside: ${uiState.category?.name}",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            }
+                        },
+                        navigationIcon = {
+                            IconButton(onClick = onBackClick) {
+                                Icon(Icons.Filled.ArrowBack, contentDescription = "Back")
+                            }
+                        },
+                        actions = {
+                            Box {
+                                IconButton(
+                                    onClick = { showMenu = true },
+                                    modifier = Modifier.onGloballyPositioned { coordinates ->
+                                        menuCoordinates = coordinates
+                                    }
+                                ) {
+                                    Icon(Icons.Filled.MoreVert, contentDescription = "More menu")
+                                }
+                                DropdownMenu(
+                                    expanded = showMenu,
+                                    onDismissRequest = { showMenu = false },
+                                    offset = DpOffset(0.dp, 0.dp)
+                                ) {
+                                    DropdownMenuItem(
+                                        text = { Text("Search") },
+                                        onClick = {
+                                            showMenu = false
+                                            searchMode = true
+                                        }
+                                    )
+                                    DropdownMenuItem(
+                                        text = { Text("Media, Links and Docs") },
+                                        onClick = { showMenu = false },
+                                        enabled = false
+                                    )
+                                }
+                            }
+                        },
+                        colors = TopAppBarDefaults.topAppBarColors(
+                            containerColor = MaterialTheme.colorScheme.surface
+                        )
                     )
                 }
             }
         }
     ) { paddingValues ->
-        // Click outside (on background) always clears selection
         Box(
             modifier = Modifier
                 .fillMaxSize()
@@ -223,46 +296,40 @@ fun CategoryDetailScreen(
                 LazyColumn(
                     state = listState,
                     contentPadding = PaddingValues(16.dp),
-                    modifier = Modifier
-                        .weight(1f)
-                        .clickable(
-                            enabled = selectedDropId != null,
-                            indication = null,
-                            interactionSource = remember { MutableInteractionSource() }) {
-                            selectedDropId = null
-                        }
+                    modifier = Modifier.weight(1f)
                 ) {
                     if (sortedDrops.isEmpty()) {
                         item { DropNestMessage(text = "Welcome to your ${uiState.category?.name ?: ""} vault!") }
                         item { DropNestMessage(text = "Add anything you like. Long press a drop to select it.") }
                     } else {
-                        itemsIndexed(sortedDrops, key = { _, d -> d.id }) { _, drop ->
+                        itemsIndexed(sortedDrops, key = { _, d -> d.id }) { idx, drop ->
                             val isSelected = drop.id == selectedDropId
+                            val isMatching = searchMode && searchResults.contains(idx)
+                            val isCurrentSearchResult = searchMode && searchResults.isNotEmpty() && searchResults[currentSearchIndex] == idx
                             DropItem(
                                 drop = drop,
                                 isFromCurrentUser = true,
+                                highlightText = if (isMatching) searchQuery else null,
                                 modifier = Modifier
                                     .background(
-                                        if (isSelected) MaterialTheme.colorScheme.primary.copy(
-                                            alpha = 0.18f
-                                        ) else Color.Transparent
+                                        if (isSelected || isCurrentSearchResult)
+                                            MaterialTheme.colorScheme.primary.copy(alpha = 0.18f)
+                                        else Color.Transparent
                                     )
                                     .then(
-                                        Modifier
-                                            .combinedClickable(
-                                                onClick = {
-                                                    if (selectedDropId == drop.id) {
-                                                        selectedDropId = null
-                                                    } else if (selectedDropId != null) {
-                                                        selectedDropId = drop.id
-                                                    }
-                                                    // else: let normal click do nothing unless in selection mode
-                                                },
-                                                onLongClick = {
-                                                    haptics.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress)
+                                        Modifier.combinedClickable(
+                                            onClick = {
+                                                if (selectedDropId == drop.id) {
+                                                    selectedDropId = null
+                                                } else if (selectedDropId != null) {
                                                     selectedDropId = drop.id
                                                 }
-                                            )
+                                            },
+                                            onLongClick = {
+                                                haptics.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress)
+                                                selectedDropId = drop.id
+                                            }
+                                        )
                                     ),
                                 onMediaClick = { clickedDrop ->
                                     if (selectedDropId == null && clickedDrop.type == DropType.IMAGE) {
@@ -299,6 +366,7 @@ fun CategoryDetailScreen(
                 )
             }
 
+            // IMAGE PREVIEW DIALOG
             selectedImageDrop?.let { drop ->
                 drop.uri?.let { imageUri ->
                     FullScreenImageDialog(
@@ -308,12 +376,11 @@ fun CategoryDetailScreen(
                 }
             }
 
-            // Delete confirmation dialog
             if (showDeleteDialog && selectedDrop != null) {
                 DeleteConfirmationDialog(
                     onDismiss = { showDeleteDialog = false },
                     onDelete = {
-                        viewModel.deleteDropById(selectedDrop) // Actually delete here!
+                        viewModel.deleteDropById(selectedDrop)
                         showDeleteDialog = false
                         selectedDropId = null
                     }
@@ -325,24 +392,28 @@ fun CategoryDetailScreen(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun NormalCategoryTopBarUI(
-    title: String,
-    subtitle: String,
+fun SearchAppBar(
+    searchQuery: String,
+    onQueryChange: (String) -> Unit,
     onBack: () -> Unit,
-    onSettings: () -> Unit
+    resultCount: Int,
+    currentIndex: Int,
+    onPrev: () -> Unit,
+    onNext: () -> Unit
 ) {
     TopAppBar(
         title = {
-            Column {
-                Text(title, style = MaterialTheme.typography.titleLarge)
-                if (subtitle.isNotBlank()) {
-                    Text(
-                        text = subtitle,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            }
+            TextField(
+                value = searchQuery,
+                onValueChange = onQueryChange,
+                placeholder = { Text("Search") },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth(),
+                colors = TextFieldDefaults.colors(
+                    unfocusedContainerColor = Color.Transparent,
+                    focusedContainerColor = Color.Transparent
+                )
+            )
         },
         navigationIcon = {
             IconButton(onClick = onBack) {
@@ -350,8 +421,16 @@ private fun NormalCategoryTopBarUI(
             }
         },
         actions = {
-            IconButton(onClick = onSettings) {
-                Icon(Icons.Filled.Settings, contentDescription = "Edit Category")
+            Text(
+                text = if (resultCount > 0) "$currentIndex/$resultCount" else "",
+                style = MaterialTheme.typography.bodyMedium,
+                modifier = Modifier.alignByBaseline()
+            )
+            IconButton(onClick = onPrev, enabled = resultCount > 0) {
+                Icon(Icons.Filled.KeyboardArrowUp, contentDescription = "Previous")
+            }
+            IconButton(onClick = onNext, enabled = resultCount > 0) {
+                Icon(Icons.Filled.KeyboardArrowDown, contentDescription = "Next")
             }
         },
         colors = TopAppBarDefaults.topAppBarColors(
@@ -455,7 +534,6 @@ private fun DeleteConfirmationDialog(
 fun shareDrop(context: Context, drop: Drop) {
     when (drop.type) {
         DropType.IMAGE, DropType.DOCUMENT -> {
-            // drop.uri might be a file://, content://, or just a path string
             val fileUri = try {
                 val parsedUri = Uri.parse(drop.uri)
                 when {
@@ -468,7 +546,6 @@ fun shareDrop(context: Context, drop: Drop) {
                             file
                         )
                     }
-
                     parsedUri.scheme == "content" -> parsedUri
                     else -> null
                 }
@@ -486,7 +563,6 @@ fun shareDrop(context: Context, drop: Drop) {
                 )
             }
         }
-
         DropType.LINK -> {
             val intent = Intent(Intent.ACTION_SEND).apply {
                 type = "text/plain"
@@ -494,7 +570,6 @@ fun shareDrop(context: Context, drop: Drop) {
             }
             context.startActivity(Intent.createChooser(intent, "Share via"))
         }
-
         DropType.NOTE -> {
             val intent = Intent(Intent.ACTION_SEND).apply {
                 type = "text/plain"
@@ -502,7 +577,6 @@ fun shareDrop(context: Context, drop: Drop) {
             }
             context.startActivity(Intent.createChooser(intent, "Share via"))
         }
-
         else -> {
             Toast.makeText(context, "Sharing this type is not supported.", Toast.LENGTH_SHORT)
                 .show()
