@@ -29,6 +29,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.core.content.FileProvider
 import coil.compose.AsyncImage
 import com.google.accompanist.pager.ExperimentalPagerApi
 import com.google.accompanist.pager.HorizontalPager
@@ -36,6 +37,7 @@ import com.google.accompanist.pager.rememberPagerState
 import tech.kaustubhdeshpande.dropnest.domain.model.Drop
 import tech.kaustubhdeshpande.dropnest.domain.model.DropType
 import tech.kaustubhdeshpande.dropnest.ui.component.EmptyState
+import java.io.File
 
 enum class DropTabType(val label: String) {
     Media("Media"),
@@ -86,39 +88,75 @@ fun CategoryFilterScreen(
 
     Scaffold(
         topBar = {
-            when {
-                selectedDropIds.isNotEmpty() -> {
-                    ShareActionBar(
-                        selectedCount = selectedDropIds.size,
-                        onClose = { selectedDropIds = emptySet() },
-                        onShare = {
-                            val selectedDrops = drops.filter { it.id in selectedDropIds }
-                            shareMultipleDrops(context, selectedDrops)
-                            selectedDropIds = emptySet()
+            Column {
+                // Always show the tab bar (even when selection bar is visible)
+                when {
+                    selectedDropIds.isNotEmpty() -> {
+                        ShareActionBar(
+                            selectedCount = selectedDropIds.size,
+                            onClose = { selectedDropIds = emptySet() },
+                            onShare = {
+                                val selectedDrops = drops.filter { it.id in selectedDropIds }
+                                shareMultipleDrops(context, selectedDrops)
+                                selectedDropIds = emptySet()
+                            }
+                        )
+                        // Tab bar always visible
+                        ScrollableTabRow(
+                            selectedTabIndex = pagerState.currentPage,
+                            edgePadding = 0.dp
+                        ) {
+                            tabList.forEachIndexed { idx, tab ->
+                                Tab(
+                                    selected = pagerState.currentPage == idx,
+                                    onClick = {
+                                        requestedTabIndex = idx
+                                        searchMode = false
+                                        searchQuery = ""
+                                    },
+                                    text = { Text(tab.label) }
+                                )
+                            }
                         }
-                    )
-                }
-                searchMode && tabList[pagerState.currentPage] != DropTabType.Media -> {
-                    SearchTopBar(
-                        searchQuery = searchQuery,
-                        onQueryChange = { searchQuery = it },
-                        onBack = { searchMode = false; searchQuery = "" },
-                    )
-                }
-                else -> {
-                    CategoryFilterTopBar(
-                        title = categoryName,
-                        selectedTabIndex = pagerState.currentPage,
-                        tabList = tabList,
-                        onTabSelected = { tabIndex ->
-                            requestedTabIndex = tabIndex
-                            searchMode = false
-                            searchQuery = ""
-                        },
-                        showSearch = tabList[pagerState.currentPage] != DropTabType.Media,
-                        onSearchClick = { searchMode = true },
-                        onBackClick = onBackClick,
-                    )
+                    }
+                    searchMode && tabList[pagerState.currentPage] != DropTabType.Media -> {
+                        SearchTopBar(
+                            searchQuery = searchQuery,
+                            onQueryChange = { searchQuery = it },
+                            onBack = { searchMode = false; searchQuery = "" },
+                        )
+                        ScrollableTabRow(
+                            selectedTabIndex = pagerState.currentPage,
+                            edgePadding = 0.dp
+                        ) {
+                            tabList.forEachIndexed { idx, tab ->
+                                Tab(
+                                    selected = pagerState.currentPage == idx,
+                                    onClick = {
+                                        requestedTabIndex = idx
+                                        searchMode = false
+                                        searchQuery = ""
+                                    },
+                                    text = { Text(tab.label) }
+                                )
+                            }
+                        }
+                    }
+                    else -> {
+                        CategoryFilterTopBar(
+                            title = categoryName,
+                            selectedTabIndex = pagerState.currentPage,
+                            tabList = tabList,
+                            onTabSelected = { tabIndex ->
+                                requestedTabIndex = tabIndex
+                                searchMode = false
+                                searchQuery = ""
+                            },
+                            showSearch = tabList[pagerState.currentPage] != DropTabType.Media,
+                            onSearchClick = { searchMode = true },
+                            onBackClick = onBackClick,
+                        )
+                    }
                 }
             }
         },
@@ -513,6 +551,29 @@ private fun Drop.matchesSearch(query: String): Boolean =
     (title?.contains(query, ignoreCase = true) == true) ||
             (text?.contains(query, ignoreCase = true) == true)
 
+// --- UPDATED SHARING LOGIC FOR FILES ---
+private fun getShareableUri(context: Context, uriString: String?): Uri? {
+    if (uriString.isNullOrBlank()) return null
+    val uri = Uri.parse(uriString)
+    return when (uri.scheme) {
+        "content" -> uri
+        "file", null -> {
+            // Use FileProvider to get a content:// URI
+            try {
+                val file = File(uri.path ?: uriString)
+                if (file.exists()) {
+                    FileProvider.getUriForFile(
+                        context,
+                        context.packageName + ".provider",
+                        file
+                    )
+                } else null
+            } catch (e: Exception) { null }
+        }
+        else -> null
+    }
+}
+
 fun shareMultipleDrops(context: Context, drops: List<Drop>) {
     if (drops.isEmpty()) return
 
@@ -535,12 +596,7 @@ fun shareMultipleDrops(context: Context, drops: List<Drop>) {
             context.startActivity(Intent.createChooser(intent, "Share via"))
         }
         allMediaOrDocs -> {
-            val uris = drops.mapNotNull {
-                try {
-                    val uri = Uri.parse(it.uri)
-                    if (uri.scheme == "content" || uri.scheme == "file") uri else null
-                } catch (e: Exception) { null }
-            }
+            val uris = drops.mapNotNull { getShareableUri(context, it.uri) }
             if (uris.isNotEmpty()) {
                 val intent = Intent(Intent.ACTION_SEND_MULTIPLE).apply {
                     type = "*/*"
