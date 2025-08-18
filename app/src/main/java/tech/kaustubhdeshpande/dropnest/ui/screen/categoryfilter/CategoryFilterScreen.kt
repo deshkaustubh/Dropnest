@@ -230,7 +230,7 @@ private fun SearchTopBar(
                 shape = MaterialTheme.shapes.large,
                 modifier = Modifier
                     .weight(1f)
-                    .height(48.dp),
+                    .height(58.dp),
                 colors = TextFieldDefaults.colors(
                     unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
                     focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
