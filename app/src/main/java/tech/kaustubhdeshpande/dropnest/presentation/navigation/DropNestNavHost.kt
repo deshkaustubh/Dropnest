@@ -1,6 +1,11 @@
 package tech.kaustubhdeshpande.dropnest.presentation.navigation
 
 import android.util.Log
+import androidx.compose.animation.AnimatedContentTransitionScope
+import androidx.compose.animation.ExperimentalAnimationApi
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -23,15 +28,14 @@ import tech.kaustubhdeshpande.dropnest.ui.screen.welcome.WelcomeScreen
 
 private const val TAG = "DropNestNavHost"
 
+@OptIn(ExperimentalAnimationApi::class)
 @Composable
 fun DropNestNavHost(
     modifier: Modifier = Modifier,
     navController: NavHostController = rememberNavController(),
     startDestination: String = DropNestDestination.Welcome.route
 ) {
-    // Wrap everything in our SafeNavigationProvider
     SafeNavigationProvider(navController) {
-        // Get reference to our safe navigation
         val safeNavigation = LocalSafeNavigation.current
 
         NavHost(
@@ -39,8 +43,33 @@ fun DropNestNavHost(
             startDestination = startDestination,
             modifier = modifier
         ) {
-            // Welcome screen
-            composable(route = DropNestDestination.Welcome.route) {
+            composable(
+                route = DropNestDestination.Welcome.route,
+                enterTransition = {
+                    slideInHorizontally(
+                        animationSpec = tween(350),
+                        initialOffsetX = { it }
+                    )
+                },
+                exitTransition = {
+                    slideOutHorizontally(
+                        animationSpec = tween(350),
+                        targetOffsetX = { -it }
+                    )
+                },
+                popEnterTransition = {
+                    slideInHorizontally(
+                        animationSpec = tween(350),
+                        initialOffsetX = { -it }
+                    )
+                },
+                popExitTransition = {
+                    slideOutHorizontally(
+                        animationSpec = tween(350),
+                        targetOffsetX = { it }
+                    )
+                }
+            ) {
                 WelcomeScreen(
                     onTimeout = {
                         safeNavigation.navigateTo(DropNestDestination.Home.route) {
@@ -53,8 +82,13 @@ fun DropNestNavHost(
                 )
             }
 
-            // Vault screen - main screen of the app
-            composable(route = DropNestDestination.Vault.route) {
+            composable(
+                route = DropNestDestination.Vault.route,
+                enterTransition = { defaultWhatsAppEnter() },
+                exitTransition = { defaultWhatsAppExit() },
+                popEnterTransition = { defaultWhatsAppPopEnter() },
+                popExitTransition = { defaultWhatsAppPopExit() }
+            ) {
                 VaultScreen(
                     onCreateDrop = {
                         safeNavigation.navigateTo(DropNestDestination.CreateDrop.route)
@@ -68,8 +102,13 @@ fun DropNestNavHost(
                 )
             }
 
-            // Home Screen - new main screen of the app
-            composable(route = DropNestDestination.Home.route) {
+            composable(
+                route = DropNestDestination.Home.route,
+                enterTransition = { defaultWhatsAppEnter() },
+                exitTransition = { defaultWhatsAppExit() },
+                popEnterTransition = { defaultWhatsAppPopEnter() },
+                popExitTransition = { defaultWhatsAppPopExit() }
+            ) {
                 Log.d(TAG, "Navigating to Home screen")
                 val viewModel: HomeViewModelImpl = hiltViewModel()
                 HomeScreen(
@@ -89,8 +128,13 @@ fun DropNestNavHost(
                 )
             }
 
-            // Create Category screen
-            composable(route = DropNestDestination.CreateCategory.route) {
+            composable(
+                route = DropNestDestination.CreateCategory.route,
+                enterTransition = { defaultWhatsAppEnter() },
+                exitTransition = { defaultWhatsAppExit() },
+                popEnterTransition = { defaultWhatsAppPopEnter() },
+                popExitTransition = { defaultWhatsAppPopExit() }
+            ) {
                 CreateCategoryScreen(
                     onBackClick = {
                         Log.d(TAG, "Navigating back from Create Category")
@@ -103,10 +147,13 @@ fun DropNestNavHost(
                 )
             }
 
-            // Edit Category screen
             composable(
                 route = DropNestDestination.EditCategory.route,
-                arguments = DropNestDestination.EditCategory.arguments
+                arguments = DropNestDestination.EditCategory.arguments,
+                enterTransition = { defaultWhatsAppEnter() },
+                exitTransition = { defaultWhatsAppExit() },
+                popEnterTransition = { defaultWhatsAppPopEnter() },
+                popExitTransition = { defaultWhatsAppPopExit() }
             ) {
                 CreateCategoryScreen(
                     onBackClick = {
@@ -120,10 +167,13 @@ fun DropNestNavHost(
                 )
             }
 
-            // Category Detail screen
             composable(
                 route = DropNestDestination.CategoryDetail.route,
-                arguments = DropNestDestination.CategoryDetail.arguments
+                arguments = DropNestDestination.CategoryDetail.arguments,
+                enterTransition = { defaultWhatsAppEnter() },
+                exitTransition = { defaultWhatsAppExit() },
+                popEnterTransition = { defaultWhatsAppPopEnter() },
+                popExitTransition = { defaultWhatsAppPopExit() }
             ) { backStackEntry ->
                 val categoryId = backStackEntry.arguments?.getString("categoryId") ?: ""
                 Log.d(TAG, "Navigating to Category Detail screen for category: $categoryId")
@@ -136,10 +186,13 @@ fun DropNestNavHost(
                 )
             }
 
-            // for the media links and docs navigation = Category Filter Screen
             composable(
                 route = DropNestDestination.CategoryFilter.route,
-                arguments = DropNestDestination.CategoryFilter.arguments
+                arguments = DropNestDestination.CategoryFilter.arguments,
+                enterTransition = { defaultWhatsAppEnter() },
+                exitTransition = { defaultWhatsAppExit() },
+                popEnterTransition = { defaultWhatsAppPopEnter() },
+                popExitTransition = { defaultWhatsAppPopExit() }
             ) { backStackEntry ->
                 val categoryId = backStackEntry.arguments?.getString("categoryId") ?: return@composable
                 val viewModel: CategoryDetailViewModel = hiltViewModel()
@@ -157,8 +210,23 @@ fun DropNestNavHost(
                     onBackClick = { safeNavigation.popBackStack() },
                 )
             }
-
-            // Other routes will be implemented as we build those screens
         }
     }
 }
+
+// Helper functions for consistent WhatsApp-style transitions
+@OptIn(ExperimentalAnimationApi::class)
+private fun AnimatedContentTransitionScope<*>.defaultWhatsAppEnter() =
+    slideInHorizontally(animationSpec = tween(100)) { it }
+
+@OptIn(ExperimentalAnimationApi::class)
+private fun AnimatedContentTransitionScope<*>.defaultWhatsAppExit() =
+    slideOutHorizontally(animationSpec = tween(100)) { -it }
+
+@OptIn(ExperimentalAnimationApi::class)
+private fun AnimatedContentTransitionScope<*>.defaultWhatsAppPopEnter() =
+    slideInHorizontally(animationSpec = tween(100)) { -it }
+
+@OptIn(ExperimentalAnimationApi::class)
+private fun AnimatedContentTransitionScope<*>.defaultWhatsAppPopExit() =
+    slideOutHorizontally(animationSpec = tween(100)) { it }
