@@ -3,6 +3,7 @@ package tech.kaustubhdeshpande.dropnest.ui.screen.categoryfilter
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import android.webkit.MimeTypeMap
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
@@ -12,6 +13,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.InsertDriveFile
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Description
@@ -19,16 +21,22 @@ import androidx.compose.material.icons.filled.InsertDriveFile
 import androidx.compose.material.icons.filled.PictureAsPdf
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.filled.TableChart
+import androidx.compose.material.icons.filled.TextSnippet
+import androidx.compose.material.icons.filled.Slideshow
 import androidx.compose.material3.*
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import coil.compose.AsyncImage
 import com.google.accompanist.pager.ExperimentalPagerApi
@@ -73,7 +81,7 @@ fun CategoryFilterScreen(
     var showDeleteDialog by remember { mutableStateOf(false) }
     val context = LocalContext.current
 
-    // New: state for image preview dialog
+    // State for image preview dialog
     var selectedImageUri by remember { mutableStateOf<String?>(null) }
 
     LaunchedEffect(requestedTabIndex) {
@@ -207,11 +215,10 @@ fun CategoryFilterScreen(
                         drops = filteredDrops,
                         tab = selectedTab,
                         onMediaClick = { drop ->
-                            // Only handle image preview here
-                            if (drop.type == DropType.IMAGE) {
-                                selectedImageUri = drop.uri
-                            } else {
-                                onMediaClick(drop)
+                            when (drop.type) {
+                                DropType.IMAGE -> selectedImageUri = drop.uri
+                                DropType.DOCUMENT -> openDocumentExternally(context, drop)
+                                else -> onMediaClick(drop)
                             }
                         },
                         selectedDropIds = selectedDropIds,
@@ -223,10 +230,10 @@ fun CategoryFilterScreen(
                                     selectedDropIds + drop.id
                                 }
                             } else {
-                                if (drop.type == DropType.IMAGE) {
-                                    selectedImageUri = drop.uri
-                                } else {
-                                    onMediaClick(drop)
+                                when (drop.type) {
+                                    DropType.IMAGE -> selectedImageUri = drop.uri
+                                    DropType.DOCUMENT -> openDocumentExternally(context, drop)
+                                    else -> onMediaClick(drop)
                                 }
                             }
                         },
@@ -257,6 +264,73 @@ fun CategoryFilterScreen(
                 onDismiss = { selectedImageUri = null }
             )
         }
+    }
+}
+
+// Helper to get the correct mime type for a file based on uri and filename
+fun getMimeTypeFromUriOrName(uri: String?, fileName: String?): String {
+    val extensionFromUri = uri?.let { u ->
+        Uri.parse(u).lastPathSegment?.substringAfterLast('.', "")?.lowercase()
+    }
+    val extensionFromName = fileName?.substringAfterLast('.', "")?.lowercase()
+    val extension = when {
+        !extensionFromUri.isNullOrEmpty() -> extensionFromUri
+        !extensionFromName.isNullOrEmpty() -> extensionFromName
+        else -> null
+    }
+    return if (!extension.isNullOrEmpty()) {
+        MimeTypeMap.getSingleton().getMimeTypeFromExtension(extension) ?: "*/*"
+    } else {
+        "*/*"
+    }
+}
+
+fun openDocumentExternally(context: Context, drop: Drop) {
+    val uri = getShareableUri(context, drop.uri)
+    val mimeType = drop.mimeType
+        ?: getMimeTypeFromUriOrName(drop.uri, drop.title)
+        ?: "*/*"
+    if (uri != null) {
+        val intent = Intent(Intent.ACTION_VIEW).apply {
+            setDataAndType(uri, mimeType)
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        }
+        try {
+            ContextCompat.startActivity(context, intent, null)
+        } catch (e: Exception) {
+            Toast.makeText(context, "No app found to open this document", Toast.LENGTH_SHORT).show()
+        }
+    } else {
+        Toast.makeText(context, "Cannot open this document", Toast.LENGTH_SHORT).show()
+    }
+}
+
+fun getDocumentIconAndColor(title: String?, mimeType: String?, uri: String?): Pair<ImageVector, Color> {
+    val name = (title ?: uri?.substringAfterLast('/') ?: "").lowercase()
+    return when {
+        name.endsWith(".pdf") || (mimeType?.contains("pdf") == true) ->
+            Pair(Icons.Filled.PictureAsPdf, Color(0xFFD32F2F)) // Red for PDF
+
+        name.endsWith(".doc") || name.endsWith(".docx") ||
+                (mimeType?.contains("msword") == true) ||
+                (mimeType?.contains("wordprocessingml") == true) ->
+            Pair(Icons.Filled.Description, Color(0xFF1976D2)) // Blue for DOC/DOCX
+
+        name.endsWith(".xls") || name.endsWith(".xlsx") ||
+                (mimeType?.contains("excel") == true) ->
+            Pair(Icons.Filled.TableChart, Color(0xFF388E3C)) // Green for Excel
+
+        name.endsWith(".ppt") || name.endsWith(".pptx") ||
+                (mimeType?.contains("powerpoint") == true) ->
+            Pair(Icons.Filled.Slideshow, Color(0xFFF57C00)) // Orange for PPT
+
+        name.endsWith(".txt") || (mimeType?.contains("text/plain") == true) ->
+            Pair(Icons.Filled.TextSnippet, Color(0xFF616161)) // Gray for TXT
+
+        name.endsWith(".rtf") || (mimeType?.contains("rtf") == true) ->
+            Pair(Icons.Filled.Description, Color(0xFF7B1FA2)) // Purple for RTF
+
+        else -> Pair(Icons.Filled.InsertDriveFile, Color(0xFF455A64)) // Default: blue-gray
     }
 }
 
@@ -433,12 +507,12 @@ fun DropListByTabFancy(
             ) {
                 when (tab) {
                     DropTabType.Media -> DropImageCard(drop = drop, onClick = { onMediaClick(drop) })
-                    DropTabType.Docs -> DropDocumentCardWithCorrectIcon(drop)
+                    DropTabType.Docs -> DropDocumentCardWithCorrectIcon(drop = drop, onClick = { onMediaClick(drop) })
                     DropTabType.Notes -> DropNoteCard(drop)
                     DropTabType.Links -> DropLinkCard(drop)
                 }
             }
-            Divider()
+            HorizontalDivider(Modifier, DividerDefaults.Thickness, DividerDefaults.color)
         }
     }
 }
@@ -471,7 +545,7 @@ fun DropImageCard(drop: Drop, onClick: () -> Unit) {
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
-                    imageVector = Icons.Filled.InsertDriveFile,
+                    imageVector = Icons.AutoMirrored.Filled.InsertDriveFile,
                     contentDescription = "Image",
                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.size(48.dp)
@@ -482,16 +556,20 @@ fun DropImageCard(drop: Drop, onClick: () -> Unit) {
 }
 
 @Composable
-fun DropDocumentCardWithCorrectIcon(drop: Drop) {
-    val icon = remember(drop.title, drop.mimeType, drop.uri) {
-        getDocumentIcon(drop.title, drop.mimeType, drop.uri)
+fun DropDocumentCardWithCorrectIcon(drop: Drop, onClick: () -> Unit = {}) {
+    val (icon, iconColor) = remember(drop.title, drop.mimeType, drop.uri) {
+        getDocumentIconAndColor(drop.title, drop.mimeType, drop.uri)
     }
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .height(85.dp),
+            .height(85.dp)
+            .combinedClickable(
+                onClick = onClick,
+                onLongClick = null
+            ),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.secondaryContainer
+            containerColor = MaterialTheme.colorScheme.surfaceVariant
         )
     ) {
         Row(
@@ -503,7 +581,7 @@ fun DropDocumentCardWithCorrectIcon(drop: Drop) {
             Icon(
                 imageVector = icon,
                 contentDescription = drop.title ?: "File",
-                tint = MaterialTheme.colorScheme.primary,
+                tint = iconColor,
                 modifier = Modifier.size(42.dp)
             )
             Spacer(modifier = Modifier.width(14.dp))
@@ -523,23 +601,6 @@ fun DropDocumentCardWithCorrectIcon(drop: Drop) {
                 )
             }
         }
-    }
-}
-
-fun getDocumentIcon(title: String?, mimeType: String?, uri: String?): androidx.compose.ui.graphics.vector.ImageVector {
-    val name = (title ?: uri?.substringAfterLast('/') ?: "").lowercase()
-    return when {
-        name.endsWith(".pdf") || (mimeType?.contains("pdf") == true) -> Icons.Filled.PictureAsPdf
-        name.endsWith(".doc") || name.endsWith(".docx") ||
-                (mimeType?.contains("msword") == true) ||
-                (mimeType?.contains("wordprocessingml") == true) -> Icons.Filled.Description
-        name.endsWith(".xls") || name.endsWith(".xlsx") ||
-                (mimeType?.contains("excel") == true) -> Icons.Filled.InsertDriveFile
-        name.endsWith(".ppt") || name.endsWith(".pptx") ||
-                (mimeType?.contains("powerpoint") == true) -> Icons.Filled.InsertDriveFile
-        name.endsWith(".txt") || (mimeType?.contains("text/plain") == true) -> Icons.Filled.InsertDriveFile
-        name.endsWith(".rtf") || (mimeType?.contains("rtf") == true) -> Icons.Filled.InsertDriveFile
-        else -> Icons.Filled.InsertDriveFile
     }
 }
 
