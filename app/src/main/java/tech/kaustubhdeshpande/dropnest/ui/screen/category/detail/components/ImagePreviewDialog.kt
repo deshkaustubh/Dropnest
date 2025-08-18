@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.Icon
@@ -93,16 +94,17 @@ private fun ImagePreviewContent(
             WindowCompat.setDecorFitsSystemWindows(it, false)
 
             // Hide system bars in immersive mode
-            val controller = WindowInsetsControllerCompat(it, view)
-            controller.hide(WindowInsetsCompat.Type.systemBars())
-            controller.systemBarsBehavior =
-                WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+//            val controller = WindowInsetsControllerCompat(it, view)
+//            controller.hide(WindowInsetsCompat.Type.systemBars())
+//            controller.systemBarsBehavior =
+//                WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
         }
 
         onDispose {
             // Restore normal mode when dismissed
             window?.let {
-                WindowCompat.setDecorFitsSystemWindows(it, true)
+                // This line was causing the system bars color change issue so commented it out
+//                WindowCompat.setDecorFitsSystemWindows(it, true)
                 val controller = WindowInsetsControllerCompat(it, view)
                 controller.show(WindowInsetsCompat.Type.systemBars())
             }
@@ -234,7 +236,7 @@ private fun ImagePreviewContent(
                     modifier = Modifier.align(Alignment.CenterStart)
                 ) {
                     Icon(
-                        imageVector = Icons.Default.ArrowBack,
+                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                         contentDescription = "Back",
                         tint = Color.White
                     )
