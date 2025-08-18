@@ -208,6 +208,7 @@ fun DropNestNavHost(
                     drops = uiState.drops,
                     initialTab = DropTabType.Media,
                     onBackClick = { safeNavigation.popBackStack() },
+                    onDeleteDrops = { dropsToDelete -> dropsToDelete.forEach { viewModel.deleteDropById(it) } }
                 )
             }
         }

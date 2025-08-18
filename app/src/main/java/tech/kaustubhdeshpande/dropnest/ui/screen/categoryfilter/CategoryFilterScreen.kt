@@ -3,7 +3,6 @@ package tech.kaustubhdeshpande.dropnest.ui.screen.categoryfilter
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
-import android.webkit.MimeTypeMap
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
@@ -14,6 +13,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.InsertDriveFile
 import androidx.compose.material.icons.filled.PictureAsPdf
@@ -55,6 +55,7 @@ fun CategoryFilterScreen(
     onBackClick: () -> Unit,
     modifier: Modifier = Modifier,
     onMediaClick: (Drop) -> Unit = {},
+    onDeleteDrops: (List<Drop>) -> Unit
 ) {
     val tabList = listOf(
         DropTabType.Media,
@@ -68,6 +69,7 @@ fun CategoryFilterScreen(
     var searchMode by remember { mutableStateOf(false) }
     var searchQuery by remember { mutableStateOf("") }
     var selectedDropIds by remember { mutableStateOf(setOf<String>()) }
+    var showDeleteDialog by remember { mutableStateOf(false) }
     val context = LocalContext.current
 
     LaunchedEffect(requestedTabIndex) {
@@ -86,22 +88,22 @@ fun CategoryFilterScreen(
         }
     }
 
+    val selectedDrops = remember(selectedDropIds, drops) { drops.filter { it.id in selectedDropIds } }
+
     Scaffold(
         topBar = {
             Column {
-                // Always show the tab bar (even when selection bar is visible)
                 when {
                     selectedDropIds.isNotEmpty() -> {
-                        ShareActionBar(
+                        MultiSelectActionBar(
                             selectedCount = selectedDropIds.size,
                             onClose = { selectedDropIds = emptySet() },
                             onShare = {
-                                val selectedDrops = drops.filter { it.id in selectedDropIds }
                                 shareMultipleDrops(context, selectedDrops)
                                 selectedDropIds = emptySet()
-                            }
+                            },
+                            onDelete = { showDeleteDialog = true }
                         )
-                        // Tab bar always visible
                         ScrollableTabRow(
                             selectedTabIndex = pagerState.currentPage,
                             edgePadding = 0.dp
@@ -219,7 +221,74 @@ fun CategoryFilterScreen(
                 }
             }
         }
+
+        if (showDeleteDialog && selectedDrops.isNotEmpty()) {
+            MultiDeleteConfirmationDialog(
+                count = selectedDrops.size,
+                onDismiss = { showDeleteDialog = false },
+                onDelete = {
+                    onDeleteDrops(selectedDrops)
+                    showDeleteDialog = false
+                    selectedDropIds = emptySet()
+                }
+            )
+        }
     }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun MultiSelectActionBar(
+    selectedCount: Int,
+    onClose: () -> Unit,
+    onShare: () -> Unit,
+    onDelete: () -> Unit
+) {
+    TopAppBar(
+        title = { Text("$selectedCount") },
+        navigationIcon = {
+            IconButton(onClick = onClose) {
+                Icon(Icons.Default.Close, contentDescription = "Close selection")
+            }
+        },
+        actions = {
+            IconButton(onClick = onDelete) {
+                Icon(Icons.Default.Delete, contentDescription = "Delete")
+            }
+            IconButton(onClick = onShare) {
+                Icon(Icons.Default.Share, contentDescription = "Share")
+            }
+        },
+        colors = TopAppBarDefaults.topAppBarColors(
+            containerColor = MaterialTheme.colorScheme.secondaryContainer,
+            titleContentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+            navigationIconContentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+            actionIconContentColor = MaterialTheme.colorScheme.onSecondaryContainer
+        )
+    )
+}
+
+@Composable
+private fun MultiDeleteConfirmationDialog(
+    count: Int,
+    onDismiss: () -> Unit,
+    onDelete: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        confirmButton = {
+            TextButton(onClick = onDelete) {
+                Text("Delete")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel")
+            }
+        },
+        title = { Text("Delete $count item${if (count > 1) "s" else ""}?") },
+        text = { Text("Are you sure you want to delete the selected item${if (count > 1) "s" else ""}? This action cannot be undone.") }
+    )
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -310,34 +379,6 @@ private fun SearchTopBar(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun ShareActionBar(
-    selectedCount: Int,
-    onClose: () -> Unit,
-    onShare: () -> Unit,
-) {
-    TopAppBar(
-        title = { Text("$selectedCount") },
-        navigationIcon = {
-            IconButton(onClick = onClose) {
-                Icon(Icons.Default.Close, contentDescription = "Close selection")
-            }
-        },
-        actions = {
-            IconButton(onClick = onShare) {
-                Icon(Icons.Default.Share, contentDescription = "Share")
-            }
-        },
-        colors = TopAppBarDefaults.topAppBarColors(
-            containerColor = MaterialTheme.colorScheme.secondaryContainer,
-            titleContentColor = MaterialTheme.colorScheme.onSecondaryContainer,
-            navigationIconContentColor = MaterialTheme.colorScheme.onSecondaryContainer,
-            actionIconContentColor = MaterialTheme.colorScheme.onSecondaryContainer
-        )
-    )
-}
-
 @Composable
 fun DropListByTabFancy(
     drops: List<Drop>,
@@ -412,7 +453,6 @@ fun DropImageCard(drop: Drop) {
     }
 }
 
-// --- Document Card with correct icon for each document type ---
 @Composable
 fun DropDocumentCardWithCorrectIcon(drop: Drop) {
     val icon = remember(drop.title, drop.mimeType, drop.uri) {
@@ -551,14 +591,12 @@ private fun Drop.matchesSearch(query: String): Boolean =
     (title?.contains(query, ignoreCase = true) == true) ||
             (text?.contains(query, ignoreCase = true) == true)
 
-// --- UPDATED SHARING LOGIC FOR FILES ---
 private fun getShareableUri(context: Context, uriString: String?): Uri? {
     if (uriString.isNullOrBlank()) return null
     val uri = Uri.parse(uriString)
     return when (uri.scheme) {
         "content" -> uri
         "file", null -> {
-            // Use FileProvider to get a content:// URI
             try {
                 val file = File(uri.path ?: uriString)
                 if (file.exists()) {
