@@ -1,48 +1,41 @@
 package tech.kaustubhdeshpande.dropnest.ui.screen.categoryfilter
 
+import android.content.Context
+import android.content.Intent
+import android.net.Uri
+import android.webkit.MimeTypeMap
+import android.widget.Toast
 import androidx.activity.compose.BackHandler
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.background
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Description
+import androidx.compose.material.icons.filled.InsertDriveFile
+import androidx.compose.material.icons.filled.PictureAsPdf
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material3.DividerDefaults
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.ScrollableTabRow
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Tab
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextFieldDefaults
-import androidx.compose.material3.TopAppBar
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material.icons.filled.Share
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import coil.compose.AsyncImage
 import com.google.accompanist.pager.ExperimentalPagerApi
 import com.google.accompanist.pager.HorizontalPager
 import com.google.accompanist.pager.rememberPagerState
 import tech.kaustubhdeshpande.dropnest.domain.model.Drop
 import tech.kaustubhdeshpande.dropnest.domain.model.DropType
 import tech.kaustubhdeshpande.dropnest.ui.component.EmptyState
-import tech.kaustubhdeshpande.dropnest.ui.screen.category.detail.components.DocumentDropItem
-import tech.kaustubhdeshpande.dropnest.ui.screen.category.detail.components.DropItem
 
 enum class DropTabType(val label: String) {
     Media("Media"),
@@ -72,34 +65,61 @@ fun CategoryFilterScreen(
     val pagerState = rememberPagerState(initialPage = initialPage)
     var searchMode by remember { mutableStateOf(false) }
     var searchQuery by remember { mutableStateOf("") }
+    var selectedDropIds by remember { mutableStateOf(setOf<String>()) }
+    val context = LocalContext.current
 
     LaunchedEffect(requestedTabIndex) {
         if (pagerState.currentPage != requestedTabIndex) {
             pagerState.animateScrollToPage(requestedTabIndex)
         }
     }
+
+    BackHandler(enabled = selectedDropIds.isNotEmpty() || searchMode) {
+        when {
+            selectedDropIds.isNotEmpty() -> selectedDropIds = emptySet()
+            searchMode -> {
+                searchMode = false
+                searchQuery = ""
+            }
+        }
+    }
+
     Scaffold(
         topBar = {
-            if (searchMode && tabList[pagerState.currentPage] != DropTabType.Media) {
-                SearchTopBar(
-                    searchQuery = searchQuery,
-                    onQueryChange = { searchQuery = it },
-                    onBack = { searchMode = false; searchQuery = "" },
-                )
-            } else {
-                CategoryFilterTopBar(
-                    title = categoryName,
-                    selectedTabIndex = pagerState.currentPage,
-                    tabList = tabList,
-                    onTabSelected = { tabIndex ->
-                        requestedTabIndex = tabIndex
-                        searchMode = false
-                        searchQuery = ""
-                    },
-                    showSearch = tabList[pagerState.currentPage] != DropTabType.Media,
-                    onSearchClick = { searchMode = true },
-                    onBackClick = onBackClick,
-                )
+            when {
+                selectedDropIds.isNotEmpty() -> {
+                    ShareActionBar(
+                        selectedCount = selectedDropIds.size,
+                        onClose = { selectedDropIds = emptySet() },
+                        onShare = {
+                            val selectedDrops = drops.filter { it.id in selectedDropIds }
+                            shareMultipleDrops(context, selectedDrops)
+                            selectedDropIds = emptySet()
+                        }
+                    )
+                }
+                searchMode && tabList[pagerState.currentPage] != DropTabType.Media -> {
+                    SearchTopBar(
+                        searchQuery = searchQuery,
+                        onQueryChange = { searchQuery = it },
+                        onBack = { searchMode = false; searchQuery = "" },
+                    )
+                }
+                else -> {
+                    CategoryFilterTopBar(
+                        title = categoryName,
+                        selectedTabIndex = pagerState.currentPage,
+                        tabList = tabList,
+                        onTabSelected = { tabIndex ->
+                            requestedTabIndex = tabIndex
+                            searchMode = false
+                            searchQuery = ""
+                        },
+                        showSearch = tabList[pagerState.currentPage] != DropTabType.Media,
+                        onSearchClick = { searchMode = true },
+                        onBackClick = onBackClick,
+                    )
+                }
             }
         },
         modifier = modifier
@@ -138,20 +158,29 @@ fun CategoryFilterScreen(
                         modifier = Modifier.fillMaxSize()
                     )
                 } else {
-                    DropListByTab(
+                    DropListByTabFancy(
                         drops = filteredDrops,
                         tab = selectedTab,
-                        highlightText = if (searchMode && selectedTab != DropTabType.Media) searchQuery else null,
-                        onMediaClick = onMediaClick
+                        onMediaClick = onMediaClick,
+                        selectedDropIds = selectedDropIds,
+                        onDropClick = { drop ->
+                            if (selectedDropIds.isNotEmpty()) {
+                                selectedDropIds = if (selectedDropIds.contains(drop.id)) {
+                                    selectedDropIds - drop.id
+                                } else {
+                                    selectedDropIds + drop.id
+                                }
+                            } else {
+                                onMediaClick(drop)
+                            }
+                        },
+                        onDropLongClick = { drop ->
+                            selectedDropIds = selectedDropIds + drop.id
+                        }
                     )
                 }
             }
         }
-    }
-
-    // Sync tab selection with pager
-    LaunchedEffect(pagerState.currentPage) {
-        // No-op, just ensures recomposition when swiped
     }
 }
 
@@ -216,7 +245,7 @@ private fun SearchTopBar(
                 .fillMaxWidth()
                 .statusBarsPadding()
                 .padding(8.dp),
-            verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+            verticalAlignment = Alignment.CenterVertically
         ) {
             IconButton(onClick = onBack, modifier = Modifier.padding(end = 4.dp)) {
                 Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
@@ -243,39 +272,288 @@ private fun SearchTopBar(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun DropListByTab(
+private fun ShareActionBar(
+    selectedCount: Int,
+    onClose: () -> Unit,
+    onShare: () -> Unit,
+) {
+    TopAppBar(
+        title = { Text("$selectedCount") },
+        navigationIcon = {
+            IconButton(onClick = onClose) {
+                Icon(Icons.Default.Close, contentDescription = "Close selection")
+            }
+        },
+        actions = {
+            IconButton(onClick = onShare) {
+                Icon(Icons.Default.Share, contentDescription = "Share")
+            }
+        },
+        colors = TopAppBarDefaults.topAppBarColors(
+            containerColor = MaterialTheme.colorScheme.secondaryContainer,
+            titleContentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+            navigationIconContentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+            actionIconContentColor = MaterialTheme.colorScheme.onSecondaryContainer
+        )
+    )
+}
+
+@Composable
+fun DropListByTabFancy(
     drops: List<Drop>,
     tab: DropTabType,
-    highlightText: String?,
-    onMediaClick: (Drop) -> Unit
+    onMediaClick: (Drop) -> Unit,
+    selectedDropIds: Set<String>,
+    onDropClick: (Drop) -> Unit,
+    onDropLongClick: (Drop) -> Unit
 ) {
-    Column {
-        drops.forEach { drop ->
-            when (tab) {
-                DropTabType.Media -> DropItem(
-                    drop = drop,
-                    onMediaClick = onMediaClick
-                )
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(0.dp)
+    ) {
+        items(drops, key = { it.id }) { drop ->
+            val isSelected = selectedDropIds.contains(drop.id)
+            val background =
+                if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.20f)
+                else Color.Transparent
 
-                DropTabType.Docs -> DocumentDropItem(
-                    drop = drop,
-                    highlightText = highlightText
-                )
-
-                DropTabType.Notes, DropTabType.Links -> DropItem(
-                    drop = drop,
-                    highlightText = highlightText,
-                    onMediaClick = onMediaClick
-                )
+            Box(
+                modifier = Modifier
+                    .background(background)
+                    .padding(vertical = 4.dp, horizontal = 6.dp)
+                    .combinedClickable(
+                        onClick = { onDropClick(drop) },
+                        onLongClick = { onDropLongClick(drop) }
+                    )
+            ) {
+                when (tab) {
+                    DropTabType.Media -> DropImageCard(drop)
+                    DropTabType.Docs -> DropDocumentCardWithCorrectIcon(drop)
+                    DropTabType.Notes -> DropNoteCard(drop)
+                    DropTabType.Links -> DropLinkCard(drop)
+                }
             }
-            HorizontalDivider(Modifier, DividerDefaults.Thickness, DividerDefaults.color)
+            Divider()
         }
     }
 }
 
-// --- Helper extension functions ---
+@Composable
+fun DropImageCard(drop: Drop) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .aspectRatio(1.6f)
+            .heightIn(min = 120.dp, max = 220.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant
+        )
+    ) {
+        if (!drop.uri.isNullOrBlank()) {
+            AsyncImage(
+                model = drop.uri,
+                contentDescription = drop.title,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.fillMaxSize()
+            )
+        } else {
+            Box(
+                Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.InsertDriveFile,
+                    contentDescription = "Image",
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(48.dp)
+                )
+            }
+        }
+    }
+}
+
+// --- Document Card with correct icon for each document type ---
+@Composable
+fun DropDocumentCardWithCorrectIcon(drop: Drop) {
+    val icon = remember(drop.title, drop.mimeType, drop.uri) {
+        getDocumentIcon(drop.title, drop.mimeType, drop.uri)
+    }
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(85.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.secondaryContainer
+        )
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(14.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = drop.title ?: "File",
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(42.dp)
+            )
+            Spacer(modifier = Modifier.width(14.dp))
+            Column {
+                Text(
+                    drop.title ?: drop.uri?.substringAfterLast('/') ?: "Document",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Text(
+                    drop.mimeType ?: "",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1
+                )
+            }
+        }
+    }
+}
+
+fun getDocumentIcon(title: String?, mimeType: String?, uri: String?): androidx.compose.ui.graphics.vector.ImageVector {
+    val name = (title ?: uri?.substringAfterLast('/') ?: "").lowercase()
+    return when {
+        name.endsWith(".pdf") || (mimeType?.contains("pdf") == true) -> Icons.Filled.PictureAsPdf
+        name.endsWith(".doc") || name.endsWith(".docx") ||
+                (mimeType?.contains("msword") == true) ||
+                (mimeType?.contains("wordprocessingml") == true) -> Icons.Filled.Description
+        name.endsWith(".xls") || name.endsWith(".xlsx") ||
+                (mimeType?.contains("excel") == true) -> Icons.Filled.InsertDriveFile
+        name.endsWith(".ppt") || name.endsWith(".pptx") ||
+                (mimeType?.contains("powerpoint") == true) -> Icons.Filled.InsertDriveFile
+        name.endsWith(".txt") || (mimeType?.contains("text/plain") == true) -> Icons.Filled.InsertDriveFile
+        name.endsWith(".rtf") || (mimeType?.contains("rtf") == true) -> Icons.Filled.InsertDriveFile
+        else -> Icons.Filled.InsertDriveFile
+    }
+}
+
+@Composable
+fun DropNoteCard(drop: Drop) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .defaultMinSize(minHeight = 70.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        )
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(14.dp)
+        ) {
+            if (!drop.title.isNullOrBlank()) {
+                Text(
+                    drop.title,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Medium,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+            }
+            Text(
+                drop.text ?: "",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 6,
+                overflow = TextOverflow.Ellipsis
+            )
+        }
+    }
+}
+
+@Composable
+fun DropLinkCard(drop: Drop) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .defaultMinSize(minHeight = 58.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant
+        )
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(14.dp)
+        ) {
+            if (!drop.title.isNullOrBlank()) {
+                Text(
+                    drop.title,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Medium,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Spacer(modifier = Modifier.height(2.dp))
+            }
+            Text(
+                drop.uri ?: drop.text ?: "",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.primary,
+                maxLines = 3,
+                overflow = TextOverflow.Ellipsis
+            )
+        }
+    }
+}
 
 private fun Drop.matchesSearch(query: String): Boolean =
     (title?.contains(query, ignoreCase = true) == true) ||
             (text?.contains(query, ignoreCase = true) == true)
+
+fun shareMultipleDrops(context: Context, drops: List<Drop>) {
+    if (drops.isEmpty()) return
+
+    val allText = drops.all { it.type == DropType.NOTE || it.type == DropType.LINK }
+    val allMediaOrDocs = drops.all { it.type == DropType.IMAGE || it.type == DropType.DOCUMENT }
+
+    when {
+        allText -> {
+            val combined = drops.joinToString("\n\n") {
+                when (it.type) {
+                    DropType.NOTE -> it.text.orEmpty()
+                    DropType.LINK -> it.uri ?: it.text.orEmpty()
+                    else -> ""
+                }
+            }
+            val intent = Intent(Intent.ACTION_SEND).apply {
+                type = "text/plain"
+                putExtra(Intent.EXTRA_TEXT, combined)
+            }
+            context.startActivity(Intent.createChooser(intent, "Share via"))
+        }
+        allMediaOrDocs -> {
+            val uris = drops.mapNotNull {
+                try {
+                    val uri = Uri.parse(it.uri)
+                    if (uri.scheme == "content" || uri.scheme == "file") uri else null
+                } catch (e: Exception) { null }
+            }
+            if (uris.isNotEmpty()) {
+                val intent = Intent(Intent.ACTION_SEND_MULTIPLE).apply {
+                    type = "*/*"
+                    putParcelableArrayListExtra(Intent.EXTRA_STREAM, ArrayList(uris))
+                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                }
+                context.startActivity(Intent.createChooser(intent, "Share via"))
+            } else {
+                Toast.makeText(context, "Could not share selected files.", Toast.LENGTH_SHORT).show()
+            }
+        }
+        else -> {
+            Toast.makeText(context, "Cannot share mixed types together.", Toast.LENGTH_SHORT).show()
+        }
+    }
+}
