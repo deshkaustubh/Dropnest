@@ -1,11 +1,13 @@
 package tech.kaustubhdeshpande.dropnest.ui.screen.categoryfilter
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Search
@@ -29,6 +31,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
@@ -109,7 +112,8 @@ fun CategoryFilterScreen(
             HorizontalPager(
                 count = tabList.size,
                 state = pagerState,
-                modifier = Modifier.weight(1f)
+                modifier = Modifier.weight(1f),
+                verticalAlignment = Alignment.Top,
             ) { page ->
                 val selectedTab = tabList[page]
                 val dropsOfType = when (selectedTab) {
@@ -200,6 +204,8 @@ private fun SearchTopBar(
     onQueryChange: (String) -> Unit,
     onBack: () -> Unit,
 ) {
+    BackHandler(onBack = onBack)
+
     Surface(
         color = MaterialTheme.colorScheme.surface,
         shadowElevation = 4.dp,
@@ -208,6 +214,7 @@ private fun SearchTopBar(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
+                .statusBarsPadding()
                 .padding(8.dp),
             verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
         ) {
@@ -217,7 +224,7 @@ private fun SearchTopBar(
             OutlinedTextField(
                 value = searchQuery,
                 onValueChange = onQueryChange,
-                placeholder = { Text("Search...") },
+                placeholder = { Text("Search...", style = MaterialTheme.typography.labelMedium) },
                 leadingIcon = { Icon(Icons.Default.Search, contentDescription = "Search") },
                 singleLine = true,
                 shape = MaterialTheme.shapes.large,
