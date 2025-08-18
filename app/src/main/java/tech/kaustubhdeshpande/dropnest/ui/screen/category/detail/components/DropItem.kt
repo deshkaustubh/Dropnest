@@ -12,6 +12,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
@@ -55,7 +56,7 @@ fun DropItem(
             drop.type == DropType.IMAGE -> {
                 Surface(
                     shape = RoundedCornerShape(8.dp),
-                    color = MaterialTheme.colorScheme.surfaceVariant,
+                    color = MaterialTheme.colorScheme.tertiaryContainer,
                     modifier = Modifier
                         .fillMaxWidth(0.7f)
                         .padding(vertical = 2.dp)
@@ -67,6 +68,7 @@ fun DropItem(
                             .crossfade(true)
                             .build(),
                         contentDescription = "Image",
+                        contentScale = ContentScale.Crop,
                         modifier = Modifier
                             .fillMaxWidth()
                             .aspectRatio(1.33f)
@@ -80,9 +82,9 @@ fun DropItem(
                 Surface(
                     shape = RoundedCornerShape(16.dp),
                     color = if (isFromCurrentUser)
-                        MaterialTheme.colorScheme.primary
+                        MaterialTheme.colorScheme.secondaryContainer
                     else
-                        MaterialTheme.colorScheme.surfaceVariant,
+                        MaterialTheme.colorScheme.surface,
                     modifier = Modifier.fillMaxWidth(0.75f)
                 ) {
                     Column(modifier = Modifier.padding(12.dp)) {
@@ -92,9 +94,9 @@ fun DropItem(
                                 highlight = highlightText,
                                 style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold),
                                 color = if (isFromCurrentUser)
-                                    MaterialTheme.colorScheme.onPrimary
+                                    MaterialTheme.colorScheme.onSecondaryContainer
                                 else
-                                    MaterialTheme.colorScheme.onSurfaceVariant
+                                    MaterialTheme.colorScheme.onSurface
                             )
                         }
                         drop.text?.let { text ->
@@ -103,12 +105,12 @@ fun DropItem(
                                     text = text,
                                     style = MaterialTheme.typography.bodyMedium.copy(
                                         color = if (isFromCurrentUser)
-                                            MaterialTheme.colorScheme.onPrimary
+                                            MaterialTheme.colorScheme.onSecondaryContainer
                                         else
-                                            MaterialTheme.colorScheme.onSurfaceVariant
+                                            MaterialTheme.colorScheme.onSurface
                                     ),
                                     linkColor = if (isFromCurrentUser)
-                                        MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.9f)
+                                        MaterialTheme.colorScheme.primary
                                     else
                                         MaterialTheme.colorScheme.primary
                                 )
@@ -118,9 +120,9 @@ fun DropItem(
                                     highlight = highlightText,
                                     style = MaterialTheme.typography.bodyMedium,
                                     color = if (isFromCurrentUser)
-                                        MaterialTheme.colorScheme.onPrimary
+                                        MaterialTheme.colorScheme.onSecondaryContainer
                                     else
-                                        MaterialTheme.colorScheme.onSurfaceVariant
+                                        MaterialTheme.colorScheme.onSurface
                                 )
                             }
                         }
@@ -138,9 +140,9 @@ fun DropItem(
                             text = formatTimestamp(drop.timestamp),
                             style = MaterialTheme.typography.bodySmall,
                             color = if (isFromCurrentUser)
-                                MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.7f)
+                                MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.7f)
                             else
-                                MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                                MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
                             modifier = Modifier.align(Alignment.End)
                         )
                     }
