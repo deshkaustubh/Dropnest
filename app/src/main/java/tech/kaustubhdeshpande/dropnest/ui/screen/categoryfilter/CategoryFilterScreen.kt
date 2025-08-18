@@ -37,6 +37,7 @@ import com.google.accompanist.pager.rememberPagerState
 import tech.kaustubhdeshpande.dropnest.domain.model.Drop
 import tech.kaustubhdeshpande.dropnest.domain.model.DropType
 import tech.kaustubhdeshpande.dropnest.ui.component.EmptyState
+import tech.kaustubhdeshpande.dropnest.ui.screen.category.detail.components.FullScreenImageDialog
 import java.io.File
 
 enum class DropTabType(val label: String) {
@@ -72,14 +73,18 @@ fun CategoryFilterScreen(
     var showDeleteDialog by remember { mutableStateOf(false) }
     val context = LocalContext.current
 
+    // New: state for image preview dialog
+    var selectedImageUri by remember { mutableStateOf<String?>(null) }
+
     LaunchedEffect(requestedTabIndex) {
         if (pagerState.currentPage != requestedTabIndex) {
             pagerState.animateScrollToPage(requestedTabIndex)
         }
     }
 
-    BackHandler(enabled = selectedDropIds.isNotEmpty() || searchMode) {
+    BackHandler(enabled = selectedDropIds.isNotEmpty() || searchMode || selectedImageUri != null) {
         when {
+            selectedImageUri != null -> selectedImageUri = null
             selectedDropIds.isNotEmpty() -> selectedDropIds = emptySet()
             searchMode -> {
                 searchMode = false
@@ -201,7 +206,14 @@ fun CategoryFilterScreen(
                     DropListByTabFancy(
                         drops = filteredDrops,
                         tab = selectedTab,
-                        onMediaClick = onMediaClick,
+                        onMediaClick = { drop ->
+                            // Only handle image preview here
+                            if (drop.type == DropType.IMAGE) {
+                                selectedImageUri = drop.uri
+                            } else {
+                                onMediaClick(drop)
+                            }
+                        },
                         selectedDropIds = selectedDropIds,
                         onDropClick = { drop ->
                             if (selectedDropIds.isNotEmpty()) {
@@ -211,7 +223,11 @@ fun CategoryFilterScreen(
                                     selectedDropIds + drop.id
                                 }
                             } else {
-                                onMediaClick(drop)
+                                if (drop.type == DropType.IMAGE) {
+                                    selectedImageUri = drop.uri
+                                } else {
+                                    onMediaClick(drop)
+                                }
                             }
                         },
                         onDropLongClick = { drop ->
@@ -231,6 +247,14 @@ fun CategoryFilterScreen(
                     showDeleteDialog = false
                     selectedDropIds = emptySet()
                 }
+            )
+        }
+
+        // Image preview dialog (fullscreen)
+        selectedImageUri?.let { imageUri ->
+            FullScreenImageDialog(
+                imageUri = imageUri,
+                onDismiss = { selectedImageUri = null }
             )
         }
     }
@@ -408,7 +432,7 @@ fun DropListByTabFancy(
                     )
             ) {
                 when (tab) {
-                    DropTabType.Media -> DropImageCard(drop)
+                    DropTabType.Media -> DropImageCard(drop = drop, onClick = { onMediaClick(drop) })
                     DropTabType.Docs -> DropDocumentCardWithCorrectIcon(drop)
                     DropTabType.Notes -> DropNoteCard(drop)
                     DropTabType.Links -> DropLinkCard(drop)
@@ -420,12 +444,16 @@ fun DropListByTabFancy(
 }
 
 @Composable
-fun DropImageCard(drop: Drop) {
+fun DropImageCard(drop: Drop, onClick: () -> Unit) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .aspectRatio(1.6f)
-            .heightIn(min = 120.dp, max = 220.dp),
+            .heightIn(min = 120.dp, max = 220.dp)
+            .combinedClickable(
+                onClick = onClick,
+                onLongClick = null
+            ),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceVariant
         )
