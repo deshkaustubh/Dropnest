@@ -11,13 +11,16 @@ sealed class DropNestDestination(
     // Welcome/Onboarding
     object Welcome : DropNestDestination("welcome")
 
-    // Main vault screen
-    object Vault : DropNestDestination("vault")
+    // Category list (left tab)
+    object Categories : DropNestDestination("categories")
 
+    // Home screen (center tab, default)
     object Home : DropNestDestination("home")
 
+    // Settings (right tab)
+    object Settings : DropNestDestination("settings")
+
     // Category screens
-    object Categories : DropNestDestination("categories")
     object CreateCategory : DropNestDestination("create_category")
 
     // Edit Category with ID parameter
@@ -46,9 +49,6 @@ sealed class DropNestDestination(
     ) {
         fun createRoute(dropId: String) = "drop_detail/$dropId"
     }
-
-    // Settings screen
-    object Settings : DropNestDestination("settings")
 
     // Category Detail with ID parameter
     object CategoryDetail : DropNestDestination(

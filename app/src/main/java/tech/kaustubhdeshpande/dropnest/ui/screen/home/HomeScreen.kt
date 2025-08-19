@@ -2,18 +2,7 @@ package tech.kaustubhdeshpande.dropnest.ui.screen.home
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBars
-import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -22,22 +11,14 @@ import androidx.compose.material.icons.outlined.Bookmark
 import androidx.compose.material.icons.outlined.Image
 import androidx.compose.material.icons.outlined.Notes
 import androidx.compose.material.icons.outlined.PictureAsPdf
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FloatingActionButton
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import tech.kaustubhdeshpande.dropnest.ui.theme.DropnestTheme
@@ -54,37 +35,88 @@ fun HomeScreen(
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
-        contentWindowInsets = WindowInsets(0, 0, 0, 0),
+        // if i had not removed this it was covering up the entire screen including the bottom system nav bar
+//        contentWindowInsets = WindowInsets(0, 0, 0, 0),
         topBar = {
             TopAppBar(
                 title = {
                     Column {
                         Text(
-                            text = "DropNest",  // Changed from "Your Categories" to "DropNest"
+                            text = "DropNest",
                             style = MaterialTheme.typography.headlineMedium,
-                            fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onBackground
                         )
-//                        Text(
-//                            text = "Organize your drops with custom tags and colors.",
-//                            style = MaterialTheme.typography.bodyLarge,
-//                            color = MaterialTheme.colorScheme.onSurfaceVariant
-//                        )
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.background,
                     titleContentColor = MaterialTheme.colorScheme.onBackground
                 ),
-                modifier = Modifier.windowInsetsPadding(WindowInsets.statusBars)
+                modifier = Modifier
             )
-        },
-        floatingActionButton = {
+        }
+    ) { paddingValues ->
+        Box(
+            modifier = modifier
+                .fillMaxSize()
+                .padding(paddingValues)
+        ) {
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(MaterialTheme.colorScheme.background)
+                    .padding(horizontal = 16.dp)
+            ) {
+                // Add some spacing at the top
+                item { Spacer(modifier = Modifier.height(8.dp)) }
+
+                // Default categories grid
+                item {
+                    DefaultCategoriesGrid(
+                        onSavedLinksClick = { onCategoryClick("links") },
+                        onNotesClick = { onCategoryClick("notes") },
+                        onImagesClick = { onCategoryClick("images") },
+                        onPdfsClick = { onCategoryClick("pdfs") }
+                    )
+                }
+
+                item { Spacer(modifier = Modifier.height(32.dp)) }
+
+                // Custom Categories Title
+                item {
+                    Text(
+                        text = "Custom Categories",
+                        style = MaterialTheme.typography.headlineSmall,
+                        color = MaterialTheme.colorScheme.onBackground,
+                        modifier = Modifier.padding(bottom = 16.dp)
+                    )
+                }
+
+                // Custom categories section
+                item {
+                    CustomCategoriesSection(
+                        categories = uiState.customCategories,
+                        isLoading = uiState.isLoading,
+                        onCategoryClick = onCategoryClick,
+                        onCreateCategoryClick = onCreateCategoryClick,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+
+                // Space at the bottom
+                item { Spacer(modifier = Modifier.height(80.dp)) }
+            }
+
             FloatingActionButton(
                 onClick = { onCreateCategoryClick() },
                 containerColor = MaterialTheme.colorScheme.tertiary,
                 shape = RoundedCornerShape(4.dp),
-                modifier = Modifier.size(56.dp)
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .padding(
+                        bottom = paddingValues.calculateBottomPadding() + 64.dp,
+                        end = 16.dp
+                    )
             ) {
                 Icon(
                     imageVector = Icons.Default.Add,
@@ -92,54 +124,6 @@ fun HomeScreen(
                     tint = MaterialTheme.colorScheme.onTertiary
                 )
             }
-        }
-    ) { paddingValues ->
-        // Replace Column+verticalScroll with LazyColumn to avoid nested scrollables
-        LazyColumn(
-            modifier = modifier
-                .padding(paddingValues)
-                .fillMaxSize()
-                .background(MaterialTheme.colorScheme.background)
-                .padding(horizontal = 16.dp)
-        ) {
-            // Add some spacing at the top
-            item { Spacer(modifier = Modifier.height(8.dp)) }
-
-            // Default categories grid
-            item {
-                DefaultCategoriesGrid(
-                    onSavedLinksClick = { onCategoryClick("links") },
-                    onNotesClick = { onCategoryClick("notes") },
-                    onImagesClick = { onCategoryClick("images") },
-                    onPdfsClick = { onCategoryClick("pdfs") }
-                )
-            }
-
-            item { Spacer(modifier = Modifier.height(32.dp)) }
-
-            // Custom Categories Title
-            item {
-                Text(
-                    text = "Custom Categories",
-                    style = MaterialTheme.typography.headlineSmall,
-                    color = MaterialTheme.colorScheme.onBackground,
-                    modifier = Modifier.padding(bottom = 16.dp)
-                )
-            }
-
-            // Custom categories section - using your original component
-            item {
-                CustomCategoriesSection(
-                    categories = uiState.customCategories,
-                    isLoading = uiState.isLoading,
-                    onCategoryClick = onCategoryClick,
-                    onCreateCategoryClick = onCreateCategoryClick,
-                    modifier = Modifier.fillMaxWidth()
-                )
-            }
-
-            // Space at the bottom
-            item { Spacer(modifier = Modifier.height(80.dp)) }
         }
     }
 }

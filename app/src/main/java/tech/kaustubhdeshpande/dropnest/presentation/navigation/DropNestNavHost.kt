@@ -6,16 +6,21 @@ import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import tech.kaustubhdeshpande.dropnest.presentation.navigation.DropNestBottomNavigation
 import tech.kaustubhdeshpande.dropnest.ui.screen.category.CreateCategoryScreen
 import tech.kaustubhdeshpande.dropnest.ui.screen.category.detail.CategoryDetailScreen
 import tech.kaustubhdeshpande.dropnest.ui.screen.category.detail.CategoryDetailViewModel
@@ -23,8 +28,9 @@ import tech.kaustubhdeshpande.dropnest.ui.screen.categoryfilter.CategoryFilterSc
 import tech.kaustubhdeshpande.dropnest.ui.screen.categoryfilter.DropTabType
 import tech.kaustubhdeshpande.dropnest.ui.screen.home.HomeScreen
 import tech.kaustubhdeshpande.dropnest.ui.screen.home.HomeViewModelImpl
-import tech.kaustubhdeshpande.dropnest.ui.screen.vault.VaultScreen
 import tech.kaustubhdeshpande.dropnest.ui.screen.welcome.WelcomeScreen
+import tech.kaustubhdeshpande.dropnest.ui.screen.categorylist.CategoryListScreen
+import tech.kaustubhdeshpande.dropnest.ui.screen.settings.SettingsScreen
 
 private const val TAG = "DropNestNavHost"
 
@@ -33,183 +39,197 @@ private const val TAG = "DropNestNavHost"
 fun DropNestNavHost(
     modifier: Modifier = Modifier,
     navController: NavHostController = rememberNavController(),
-    startDestination: String = DropNestDestination.Welcome.route
+    startDestination: String = DropNestDestination.Home.route
 ) {
     SafeNavigationProvider(navController) {
         val safeNavigation = LocalSafeNavigation.current
+        val navBackStackEntry by navController.currentBackStackEntryAsState()
+        val currentRoute = navBackStackEntry?.destination?.route
 
-        NavHost(
-            navController = navController,
-            startDestination = startDestination,
-            modifier = modifier
-        ) {
-            composable(
-                route = DropNestDestination.Welcome.route,
-                enterTransition = {
-                    slideInHorizontally(
-                        animationSpec = tween(350),
-                        initialOffsetX = { it }
-                    )
-                },
-                exitTransition = {
-                    slideOutHorizontally(
-                        animationSpec = tween(350),
-                        targetOffsetX = { -it }
-                    )
-                },
-                popEnterTransition = {
-                    slideInHorizontally(
-                        animationSpec = tween(350),
-                        initialOffsetX = { -it }
-                    )
-                },
-                popExitTransition = {
-                    slideOutHorizontally(
-                        animationSpec = tween(350),
-                        targetOffsetX = { it }
-                    )
+        // Show bottom navigation only on these routes
+        val bottomBarRoutes = setOf(
+            DropNestDestination.Categories.route,
+            DropNestDestination.Home.route,
+            DropNestDestination.Settings.route
+        )
+
+        Scaffold(
+            bottomBar = {
+                if (currentRoute in bottomBarRoutes) {
+                    DropNestBottomNavigation(navController = navController)
                 }
-            ) {
-                WelcomeScreen(
-                    onTimeout = {
-                        safeNavigation.navigateTo(DropNestDestination.Home.route) {
-                            popUpTo(DropNestDestination.Welcome.route) { inclusive = true }
-                            launchSingleTop = true
-                            restoreState = true
-                        }
-                    },
-                    delayMillis = 1500L,
-                )
             }
-
-            composable(
-                route = DropNestDestination.Vault.route,
-                enterTransition = { defaultWhatsAppEnter() },
-                exitTransition = { defaultWhatsAppExit() },
-                popEnterTransition = { defaultWhatsAppPopEnter() },
-                popExitTransition = { defaultWhatsAppPopExit() }
+        ) { innerPadding ->
+            NavHost(
+                navController = navController,
+                startDestination = startDestination,
+                modifier = modifier
             ) {
-                VaultScreen(
-                    onCreateDrop = {
-                        safeNavigation.navigateTo(DropNestDestination.CreateDrop.route)
+                composable(
+                    route = DropNestDestination.Welcome.route,
+                    enterTransition = {
+                        slideInHorizontally(
+                            animationSpec = tween(350),
+                            initialOffsetX = { it }
+                        )
                     },
-                    onDropClick = { dropId ->
-                        safeNavigation.navigateTo(DropNestDestination.DropDetail.createRoute(dropId))
+                    exitTransition = {
+                        slideOutHorizontally(
+                            animationSpec = tween(350),
+                            targetOffsetX = { -it }
+                        )
                     },
-                    onSettingsClick = {
-                        safeNavigation.navigateTo(DropNestDestination.Settings.route)
-                    }
-                )
-            }
-
-            composable(
-                route = DropNestDestination.Home.route,
-                enterTransition = { defaultWhatsAppEnter() },
-                exitTransition = { defaultWhatsAppExit() },
-                popEnterTransition = { defaultWhatsAppPopEnter() },
-                popExitTransition = { defaultWhatsAppPopExit() }
-            ) {
-                Log.d(TAG, "Navigating to Home screen")
-                val viewModel: HomeViewModelImpl = hiltViewModel()
-                HomeScreen(
-                    viewModel = viewModel,
-                    onCreateCategoryClick = {
-                        Log.d(TAG, "Navigating to Create Category screen")
-                        safeNavigation.navigateTo(DropNestDestination.CreateCategory.route)
+                    popEnterTransition = {
+                        slideInHorizontally(
+                            animationSpec = tween(350),
+                            initialOffsetX = { -it }
+                        )
                     },
-                    onCategoryClick = { categoryId ->
-                        Log.d(TAG, "Navigating to Category Detail screen for category: $categoryId")
-                        safeNavigation.navigateTo(
-                            DropNestDestination.CategoryDetail.createRoute(
-                                categoryId
-                            )
+                    popExitTransition = {
+                        slideOutHorizontally(
+                            animationSpec = tween(350),
+                            targetOffsetX = { it }
                         )
                     }
-                )
-            }
-
-            composable(
-                route = DropNestDestination.CreateCategory.route,
-                enterTransition = { defaultWhatsAppEnter() },
-                exitTransition = { defaultWhatsAppExit() },
-                popEnterTransition = { defaultWhatsAppPopEnter() },
-                popExitTransition = { defaultWhatsAppPopExit() }
-            ) {
-                CreateCategoryScreen(
-                    onBackClick = {
-                        Log.d(TAG, "Navigating back from Create Category")
-                        safeNavigation.popBackStack()
-                    },
-                    onCategorySaved = {
-                        Log.d(TAG, "Category saved, navigating back")
-                        safeNavigation.popBackStack()
-                    }
-                )
-            }
-
-            composable(
-                route = DropNestDestination.EditCategory.route,
-                arguments = DropNestDestination.EditCategory.arguments,
-                enterTransition = { defaultWhatsAppEnter() },
-                exitTransition = { defaultWhatsAppExit() },
-                popEnterTransition = { defaultWhatsAppPopEnter() },
-                popExitTransition = { defaultWhatsAppPopExit() }
-            ) {
-                CreateCategoryScreen(
-                    onBackClick = {
-                        Log.d(TAG, "Navigating back from Edit Category")
-                        safeNavigation.popBackStack()
-                    },
-                    onCategorySaved = {
-                        Log.d(TAG, "Category updated, navigating back")
-                        safeNavigation.popBackStack()
-                    }
-                )
-            }
-
-            composable(
-                route = DropNestDestination.CategoryDetail.route,
-                arguments = DropNestDestination.CategoryDetail.arguments,
-                enterTransition = { defaultWhatsAppEnter() },
-                exitTransition = { defaultWhatsAppExit() },
-                popEnterTransition = { defaultWhatsAppPopEnter() },
-                popExitTransition = { defaultWhatsAppPopExit() }
-            ) { backStackEntry ->
-                val categoryId = backStackEntry.arguments?.getString("categoryId") ?: ""
-                Log.d(TAG, "Navigating to Category Detail screen for category: $categoryId")
-                CategoryDetailScreen(
-                    categoryId = categoryId,
-                    onBackClick = {
-                        Log.d(TAG, "Navigating back from Category Detail")
-                        safeNavigation.popBackStack()
-                    }
-                )
-            }
-
-            composable(
-                route = DropNestDestination.CategoryFilter.route,
-                arguments = DropNestDestination.CategoryFilter.arguments,
-                enterTransition = { defaultWhatsAppEnter() },
-                exitTransition = { defaultWhatsAppExit() },
-                popEnterTransition = { defaultWhatsAppPopEnter() },
-                popExitTransition = { defaultWhatsAppPopExit() }
-            ) { backStackEntry ->
-                val categoryId = backStackEntry.arguments?.getString("categoryId") ?: return@composable
-                val viewModel: CategoryDetailViewModel = hiltViewModel()
-                val uiState by viewModel.uiState.collectAsState()
-
-                LaunchedEffect(categoryId) {
-                    viewModel.loadCategory(categoryId)
-                    viewModel.loadDrops(categoryId)
+                ) {
+                    WelcomeScreen(
+                        onTimeout = {
+                            safeNavigation.navigateTo(DropNestDestination.Home.route) {
+                                popUpTo(DropNestDestination.Welcome.route) { inclusive = true }
+                                launchSingleTop = true
+                                restoreState = true
+                            }
+                        },
+                        delayMillis = 1500L,
+                    )
                 }
 
-                CategoryFilterScreen(
-                    categoryName = uiState.category?.name ?: "",
-                    drops = uiState.drops,
-                    initialTab = DropTabType.Media,
-                    onBackClick = { safeNavigation.popBackStack() },
-                    onDeleteDrops = { dropsToDelete -> dropsToDelete.forEach { viewModel.deleteDropById(it) } }
-                )
+                // Left tab: Categories list
+                composable(
+                    route = DropNestDestination.Categories.route,
+                    enterTransition = { defaultWhatsAppEnter() },
+                    exitTransition = { defaultWhatsAppExit() },
+                    popEnterTransition = { defaultWhatsAppPopEnter() },
+                    popExitTransition = { defaultWhatsAppPopExit() }
+                ) {
+                    // Pass innerPadding ONLY to the main content of the tab screens
+                    CategoryListScreen(
+                        onCategoryClick = { categoryId ->
+                            safeNavigation.navigateTo(DropNestDestination.CategoryDetail.createRoute(categoryId))
+                        },
+                        onAddCategoryClick = {
+                            safeNavigation.navigateTo(DropNestDestination.CreateCategory.route)
+                        },
+//                        modifier = Modifier.padding(innerPadding)
+                    )
+                }
+
+                // Center tab: Home
+                composable(
+                    route = DropNestDestination.Home.route,
+                    enterTransition = { defaultWhatsAppEnter() },
+                    exitTransition = { defaultWhatsAppExit() },
+                    popEnterTransition = { defaultWhatsAppPopEnter() },
+                    popExitTransition = { defaultWhatsAppPopExit() }
+                ) {
+                    Log.d(TAG, "Navigating to Home screen")
+                    val viewModel: HomeViewModelImpl = hiltViewModel()
+                    HomeScreen(
+                        viewModel = viewModel,
+                        onCreateCategoryClick = {
+                            safeNavigation.navigateTo(DropNestDestination.CreateCategory.route)
+                        },
+                        onCategoryClick = { categoryId ->
+                            safeNavigation.navigateTo(DropNestDestination.CategoryDetail.createRoute(categoryId))
+                        },
+                    )
+                }
+
+                // Right tab: Settings
+                composable(
+                    route = DropNestDestination.Settings.route,
+                    enterTransition = { defaultWhatsAppEnter() },
+                    exitTransition = { defaultWhatsAppExit() },
+                    popEnterTransition = { defaultWhatsAppPopEnter() },
+                    popExitTransition = { defaultWhatsAppPopExit() }
+                ) {
+                    SettingsScreen(
+                        modifier = Modifier.padding(innerPadding)
+                    )
+                }
+
+                // ==== Non-tab destinations ====
+                composable(
+                    route = DropNestDestination.CreateCategory.route,
+                    enterTransition = { defaultWhatsAppEnter() },
+                    exitTransition = { defaultWhatsAppExit() },
+                    popEnterTransition = { defaultWhatsAppPopEnter() },
+                    popExitTransition = { defaultWhatsAppPopExit() }
+                ) {
+                    CreateCategoryScreen(
+                        onBackClick = {
+                            safeNavigation.popBackStack()
+                        },
+                        onCategorySaved = {
+                            safeNavigation.popBackStack()
+                        }
+                    )
+                }
+
+                composable(
+                    route = DropNestDestination.EditCategory.route,
+                    arguments = DropNestDestination.EditCategory.arguments,
+                    enterTransition = { defaultWhatsAppEnter() },
+                    exitTransition = { defaultWhatsAppExit() },
+                    popEnterTransition = { defaultWhatsAppPopEnter() },
+                    popExitTransition = { defaultWhatsAppPopExit() }
+                ) {
+                    CreateCategoryScreen(
+                        onBackClick = { safeNavigation.popBackStack() },
+                        onCategorySaved = { safeNavigation.popBackStack() }
+                    )
+                }
+
+                composable(
+                    route = DropNestDestination.CategoryDetail.route,
+                    arguments = DropNestDestination.CategoryDetail.arguments,
+                    enterTransition = { defaultWhatsAppEnter() },
+                    exitTransition = { defaultWhatsAppExit() },
+                    popEnterTransition = { defaultWhatsAppPopEnter() },
+                    popExitTransition = { defaultWhatsAppPopExit() }
+                ) { backStackEntry ->
+                    val categoryId = backStackEntry.arguments?.getString("categoryId") ?: ""
+                    CategoryDetailScreen(
+                        categoryId = categoryId,
+                        onBackClick = { safeNavigation.popBackStack() }
+                    )
+                }
+
+                composable(
+                    route = DropNestDestination.CategoryFilter.route,
+                    arguments = DropNestDestination.CategoryFilter.arguments,
+                    enterTransition = { defaultWhatsAppEnter() },
+                    exitTransition = { defaultWhatsAppExit() },
+                    popEnterTransition = { defaultWhatsAppPopEnter() },
+                    popExitTransition = { defaultWhatsAppPopExit() }
+                ) { backStackEntry ->
+                    val categoryId = backStackEntry.arguments?.getString("categoryId") ?: return@composable
+                    val viewModel: CategoryDetailViewModel = hiltViewModel()
+                    val uiState by viewModel.uiState.collectAsState()
+
+                    LaunchedEffect(categoryId) {
+                        viewModel.loadCategory(categoryId)
+                        viewModel.loadDrops(categoryId)
+                    }
+
+                    CategoryFilterScreen(
+                        categoryName = uiState.category?.name ?: "",
+                        drops = uiState.drops,
+                        initialTab = DropTabType.Media,
+                        onBackClick = { safeNavigation.popBackStack() },
+                        onDeleteDrops = { dropsToDelete -> dropsToDelete.forEach { viewModel.deleteDropById(it) } }
+                    )
+                }
             }
         }
     }
