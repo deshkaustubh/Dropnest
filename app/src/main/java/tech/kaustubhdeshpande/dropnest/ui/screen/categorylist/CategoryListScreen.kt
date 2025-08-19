@@ -7,16 +7,19 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.outlined.Folder
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import tech.kaustubhdeshpande.dropnest.domain.model.Category
+import tech.kaustubhdeshpande.dropnest.ui.component.availableCategoryIcons
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -102,6 +105,12 @@ fun CategoryListScreen(
     }
 }
 
+// Helper to get ImageVector from icon name in the emoji field (actually stores icon name)
+fun getCategoryIconFromName(iconName: String): ImageVector {
+    return availableCategoryIcons.find { it.contentDescription == iconName }?.icon
+        ?: Icons.Outlined.Folder // fallback
+}
+
 @Composable
 fun CategoryListItem(
     category: Category,
@@ -130,10 +139,11 @@ fun CategoryListItem(
                 .background(parsedColor, shape = MaterialTheme.shapes.medium),
             contentAlignment = Alignment.Center
         ) {
-            Text(
-                text = category.emoji,
-                style = MaterialTheme.typography.titleLarge,
-                color = MaterialTheme.colorScheme.onPrimary
+            Icon(
+                imageVector = getCategoryIconFromName(category.emoji),
+                contentDescription = null,
+                tint = Color.White, // Always white for maximum contrast
+                modifier = Modifier.size(28.dp)
             )
         }
         Spacer(modifier = Modifier.width(16.dp))

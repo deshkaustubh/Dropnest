@@ -11,6 +11,10 @@ import kotlinx.coroutines.launch
 import tech.kaustubhdeshpande.dropnest.domain.model.Category
 import tech.kaustubhdeshpande.dropnest.domain.usecase.category.GetCategoriesUseCase
 import javax.inject.Inject
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Folder
+import androidx.compose.ui.graphics.vector.ImageVector
+import tech.kaustubhdeshpande.dropnest.ui.component.availableCategoryIcons
 
 @HiltViewModel
 class CategoryListViewModel @Inject constructor(
@@ -26,5 +30,10 @@ class CategoryListViewModel @Inject constructor(
                 _categories.value = cats
             }
         }
+    }
+
+    fun getCategoryIconByName(iconName: String): ImageVector {
+        return availableCategoryIcons.find { it.contentDescription == iconName }?.icon
+            ?: Icons.Outlined.Folder
     }
 }
