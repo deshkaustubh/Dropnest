@@ -26,13 +26,13 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 
 val categoryColors = listOf(
-    Color(0xFF4CAF50), // Green
-    Color(0xFFC9A7E8), // Lavender
-    Color(0xFFF6D98E), // Yellow
-    Color(0xFFE0E0E0), // Light Gray
-    Color(0xFF5C6BC0)  // Indigo
+    Color(0xFF43A047), // Green
+    Color(0xFF1976D2), // Blue
+    Color(0xFF8E24AA), // Purple
+    Color(0xFFEF5350), // Red
+    Color(0xFF00897B), // Teal
+    Color(0xFFFFA726), // Orange
 )
-
 @Composable
 fun ColorSelector(
     selectedColor: Color,

@@ -24,7 +24,9 @@ import androidx.compose.material.icons.outlined.Code
 import androidx.compose.material.icons.outlined.CollectionsBookmark
 import androidx.compose.material.icons.outlined.Flight
 import androidx.compose.material.icons.outlined.Folder
+import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.LocalLibrary
+import androidx.compose.material.icons.outlined.MusicNote
 import androidx.compose.material.icons.outlined.Pets
 import androidx.compose.material.icons.outlined.School
 import androidx.compose.material.icons.outlined.Science
@@ -49,20 +51,21 @@ data class CategoryIcon(
 )
 
 val availableCategoryIcons = listOf(
-    CategoryIcon(Icons.Outlined.Work, "Work"),
     CategoryIcon(Icons.Outlined.Folder, "General"),
+    CategoryIcon(Icons.Outlined.Work, "Work"),
     CategoryIcon(Icons.Outlined.School, "Education"),
-    CategoryIcon(Icons.Outlined.Flight, "Travel"),
-    CategoryIcon(Icons.Outlined.Brush, "Design"),
-    CategoryIcon(Icons.Outlined.Code, "Development"),
+    CategoryIcon(Icons.Outlined.Home, "Home"),
     CategoryIcon(Icons.Outlined.ShoppingBag, "Shopping"),
-    CategoryIcon(Icons.Outlined.SportsBasketball, "Sports"),
+    CategoryIcon(Icons.Outlined.Flight, "Travel"),
     CategoryIcon(Icons.Outlined.LocalLibrary, "Books"),
+    CategoryIcon(Icons.Outlined.CollectionsBookmark, "Collections"),
     CategoryIcon(Icons.Outlined.Science, "Science"),
     CategoryIcon(Icons.Outlined.Pets, "Pets"),
-    CategoryIcon(Icons.Outlined.Apartment, "Home"),
-    CategoryIcon(Icons.Outlined.Business, "Business"),
-    CategoryIcon(Icons.Outlined.CollectionsBookmark, "Collections")
+    CategoryIcon(Icons.Outlined.SportsBasketball, "Sports"),
+    CategoryIcon(Icons.Outlined.MusicNote, "Music"),
+    CategoryIcon(Icons.Outlined.Brush, "Design"),
+    CategoryIcon(Icons.Outlined.Code, "Development"),
+    CategoryIcon(Icons.Outlined.Business, "Business")
 )
 
 @Composable
