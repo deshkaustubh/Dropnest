@@ -1,4 +1,4 @@
-package tech.kaustubhdeshpande.dropnest.ui.screen.category.detail
+package tech.kaustubhdeshpande.dropnest.ui.screen.category
 
 import android.app.Application
 import android.net.Uri
@@ -21,6 +21,7 @@ import tech.kaustubhdeshpande.dropnest.domain.usecase.category.GetCategoryByIdUs
 import tech.kaustubhdeshpande.dropnest.domain.usecase.drop.CreateDropUseCase
 import tech.kaustubhdeshpande.dropnest.domain.usecase.drop.GetDropsByCategoryUseCase
 import tech.kaustubhdeshpande.dropnest.domain.usecase.drop.DeleteDropUseCase
+import tech.kaustubhdeshpande.dropnest.domain.repository.CategoryRepository
 import tech.kaustubhdeshpande.dropnest.util.FileManager
 import java.io.File
 import java.util.UUID
@@ -34,7 +35,8 @@ class CategoryDetailViewModel @Inject constructor(
     private val getCategoryByIdUseCase: GetCategoryByIdUseCase,
     private val getDropsByCategoryUseCase: GetDropsByCategoryUseCase,
     private val createDropUseCase: CreateDropUseCase,
-    private val deleteDropUseCase: DeleteDropUseCase
+    private val deleteDropUseCase: DeleteDropUseCase,
+    private val categoryRepository: CategoryRepository // <-- ADDED INJECTION
 ) : AndroidViewModel(application) {
 
     private val fileManager = FileManager(getApplication())
@@ -123,6 +125,9 @@ class CategoryDetailViewModel @Inject constructor(
                 Log.d(TAG, "Saving drop: ${drop.id}, type: ${drop.type}")
                 createDropUseCase(drop)
                 Log.d(TAG, "Drop saved successfully")
+
+                // Update the category's timestamp to now
+                categoryRepository.updateCategoryTimestamp(drop.categoryId, System.currentTimeMillis())
 
                 // Refresh the drops list
                 loadDrops(drop.categoryId)

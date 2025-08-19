@@ -37,4 +37,7 @@ interface CategoryDao {
 
     @Query("SELECT COUNT(*) FROM categories WHERE isDefault = 0")
     fun getCustomCategoryCount(): Flow<Int>
+
+    @Query("UPDATE categories SET timestamp = :timestamp WHERE id = :categoryId")
+    suspend fun updateCategoryTimestamp(categoryId: String, timestamp: Long)
 }

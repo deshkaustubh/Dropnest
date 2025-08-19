@@ -85,13 +85,13 @@ class CategoryViewModel @Inject constructor(
                 emoji = getIconName(currentState.selectedIcon),
                 colorHex = colorToHex(currentState.selectedColor),
                 isDefault = false, // Custom categories are never default
-                timestamp = System.currentTimeMillis()
+                timestamp = System.currentTimeMillis() // Always update timestamp!
             )
 
             if (currentState.isEditing) {
                 categoryRepository.updateCategory(category)
             } else {
-                categoryRepository.createCategory(category) // Fixed: using createCategory instead of insertCategory
+                categoryRepository.createCategory(category)
             }
 
             onSuccess()

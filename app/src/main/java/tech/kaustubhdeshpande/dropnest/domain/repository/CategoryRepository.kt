@@ -18,6 +18,11 @@ interface CategoryRepository {
 
     suspend fun updateCategory(category: Category)
 
+    /**
+     * Update only the timestamp of a category.
+     */
+    suspend fun updateCategoryTimestamp(categoryId: String, timestamp: Long)
+
     suspend fun deleteCategory(categoryId: String)
 
     fun getCustomCategoryCount(): Flow<Int>

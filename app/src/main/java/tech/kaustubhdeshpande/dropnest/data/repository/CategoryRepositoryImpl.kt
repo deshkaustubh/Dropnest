@@ -41,7 +41,6 @@ class CategoryRepositoryImpl @Inject constructor(
     }
 
     override fun getCategoryWithDropCount(categoryId: String): Flow<Pair<Category, Int>?> {
-        // Using flow builder to properly handle suspend function call
         val categoryFlow = flow {
             val category = categoryDao.getCategoryById(categoryId)?.toDomain()
             emit(category)
@@ -63,6 +62,10 @@ class CategoryRepositoryImpl @Inject constructor(
 
     override suspend fun updateCategory(category: Category) {
         categoryDao.updateCategory(CategoryEntity.fromDomain(category))
+    }
+
+    override suspend fun updateCategoryTimestamp(categoryId: String, timestamp: Long) {
+        categoryDao.updateCategoryTimestamp(categoryId, timestamp)
     }
 
     override suspend fun deleteCategory(categoryId: String) {

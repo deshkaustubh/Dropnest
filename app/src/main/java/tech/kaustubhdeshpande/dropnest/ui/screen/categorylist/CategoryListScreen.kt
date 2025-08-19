@@ -30,8 +30,10 @@ fun CategoryListScreen(
 ) {
     val categories by viewModel.categories.collectAsState()
 
-    // Filter out default categories
-    val customCategories = categories.filter { !it.isDefault }
+    // 1. Only custom categories (not default), 2. Sorted by last updated (timestamp desc)
+    val customCategories = categories
+        .filter { !it.isDefault }
+        .sortedByDescending { it.timestamp }
 
     Scaffold(
         topBar = {
@@ -144,7 +146,7 @@ fun CategoryListItem(
                 overflow = TextOverflow.Ellipsis
             )
             Text(
-                text = "Last updated: ${formatCategoryTimestamp(category.timestamp)}",
+                text = "Last updated:\n${formatCategoryTimestamp(category.timestamp)}",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -159,14 +161,17 @@ fun CategoryListItem(
     Spacer(modifier = Modifier.height(4.dp))
 }
 
-// Format as "2 hours ago", "Yesterday", or a date
+// Format as "Just now", "2 hours ago", "Yesterday", or a date
 fun formatCategoryTimestamp(timestamp: Long): String {
     val now = System.currentTimeMillis()
     val diff = now - timestamp
-    val oneDay = 24 * 60 * 60 * 1000L
-    val oneHour = 60 * 60 * 1000L
+    val oneMinute = 60 * 1000L
+    val oneHour = 60 * oneMinute
+    val oneDay = 24 * oneHour
+
     return when {
-        diff < oneHour -> "${diff / (60 * 1000)} minutes ago"
+        diff < oneMinute -> "Just now"
+        diff < oneHour -> "${diff / oneMinute} minutes ago"
         diff < oneDay -> "${diff / oneHour} hours ago"
         diff < 2 * oneDay -> "Yesterday"
         diff < 7 * oneDay -> "${diff / oneDay} days ago"

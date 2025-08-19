@@ -12,7 +12,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
@@ -20,10 +19,9 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import tech.kaustubhdeshpande.dropnest.presentation.navigation.DropNestBottomNavigation
 import tech.kaustubhdeshpande.dropnest.ui.screen.category.CreateCategoryScreen
 import tech.kaustubhdeshpande.dropnest.ui.screen.category.detail.CategoryDetailScreen
-import tech.kaustubhdeshpande.dropnest.ui.screen.category.detail.CategoryDetailViewModel
+import tech.kaustubhdeshpande.dropnest.ui.screen.category.CategoryDetailViewModel
 import tech.kaustubhdeshpande.dropnest.ui.screen.categoryfilter.CategoryFilterScreen
 import tech.kaustubhdeshpande.dropnest.ui.screen.categoryfilter.DropTabType
 import tech.kaustubhdeshpande.dropnest.ui.screen.home.HomeScreen
