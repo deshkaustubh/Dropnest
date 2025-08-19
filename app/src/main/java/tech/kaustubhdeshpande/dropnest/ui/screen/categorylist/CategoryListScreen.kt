@@ -30,6 +30,9 @@ fun CategoryListScreen(
 ) {
     val categories by viewModel.categories.collectAsState()
 
+    // Filter out default categories
+    val customCategories = categories.filter { !it.isDefault }
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -49,7 +52,7 @@ fun CategoryListScreen(
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
-            if (categories.isEmpty()) {
+            if (customCategories.isEmpty()) {
                 Box(
                     Modifier.fillMaxSize(),
                     contentAlignment = Alignment.Center
@@ -68,7 +71,7 @@ fun CategoryListScreen(
                         .background(MaterialTheme.colorScheme.background),
                     contentPadding = PaddingValues(bottom = 90.dp)
                 ) {
-                    items(categories) { category ->
+                    items(customCategories) { category ->
                         CategoryListItem(
                             category = category,
                             onClick = { onCategoryClick(category.id) }
