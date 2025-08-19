@@ -16,10 +16,12 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import tech.kaustubhdeshpande.dropnest.domain.model.Category
 import tech.kaustubhdeshpande.dropnest.ui.component.availableCategoryIcons
+import tech.kaustubhdeshpande.dropnest.ui.theme.DropnestTheme
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -91,7 +93,7 @@ fun CategoryListScreen(
                 modifier = Modifier
                     .align(Alignment.BottomEnd)
                     .padding(
-                        bottom = paddingValues.calculateBottomPadding() + 40.dp,
+                        bottom = paddingValues.calculateBottomPadding() + 60.dp,
                         end = 16.dp
                     )
             ) {

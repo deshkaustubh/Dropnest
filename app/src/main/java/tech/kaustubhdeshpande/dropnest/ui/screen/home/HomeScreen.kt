@@ -110,7 +110,7 @@ fun HomeScreen(
             FloatingActionButton(
                 onClick = { onCreateCategoryClick() },
                 containerColor = MaterialTheme.colorScheme.tertiary,
-                shape = RoundedCornerShape(4.dp),
+//                shape = RoundedCornerShape(4.dp),
                 modifier = Modifier
                     .align(Alignment.BottomEnd)
                     .padding(
