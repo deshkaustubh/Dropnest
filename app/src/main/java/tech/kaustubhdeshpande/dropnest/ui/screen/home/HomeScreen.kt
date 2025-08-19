@@ -42,7 +42,7 @@ fun HomeScreen(
                 title = {
                     Column {
                         Text(
-                            text = "DropNest",
+                            text = "Dropnest",
                             style = MaterialTheme.typography.headlineMedium,
                             color = MaterialTheme.colorScheme.onBackground
                         )
