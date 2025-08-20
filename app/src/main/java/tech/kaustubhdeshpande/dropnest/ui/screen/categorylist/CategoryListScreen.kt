@@ -1,5 +1,6 @@
 package tech.kaustubhdeshpande.dropnest.ui.screen.categorylist
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
@@ -7,10 +8,12 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.outlined.Folder
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -37,40 +40,68 @@ fun CategoryListScreen(
     modifier: Modifier = Modifier
 ) {
     val categories by viewModel.categories.collectAsState()
+    var searchMode by remember { mutableStateOf(false) }
+    var searchQuery by remember { mutableStateOf("") }
 
-    // 1. Only custom categories (not default), 2. Sorted by last updated (timestamp desc)
+    // Only custom categories (not default), sorted by last updated (timestamp desc)
     val customCategories = categories
         .filter { !it.isDefault }
         .sortedByDescending { it.timestamp }
+
+    // Filter categories by search query (case-insensitive)
+    val filteredCategories = if (searchQuery.isBlank()) {
+        customCategories
+    } else {
+        customCategories.filter {
+            it.name.contains(searchQuery, ignoreCase = true)
+        }
+    }
 
     // Selection mode state
     var selectedCategoryIds by remember { mutableStateOf<Set<String>>(emptySet()) }
     var showDeleteDialog by remember { mutableStateOf(false) }
 
+    // Handle back button in search or selection mode
+    BackHandler(enabled = searchMode || selectedCategoryIds.isNotEmpty()) {
+        when {
+            searchMode -> {
+                searchMode = false
+                searchQuery = ""
+            }
+            selectedCategoryIds.isNotEmpty() -> selectedCategoryIds = emptySet()
+        }
+    }
+
     Scaffold(
         topBar = {
-            when {
-                selectedCategoryIds.isNotEmpty() -> {
-                    SelectionTopBar(
-                        selectedCount = selectedCategoryIds.size,
-                        onClose = { selectedCategoryIds = emptySet() },
-                        onDelete = { showDeleteDialog = true },
-                        onEdit = {
-                            if (selectedCategoryIds.size == 1)
-                                onEditCategoryClick(selectedCategoryIds.first())
-                        }
-                    )
-                }
-                else -> {
-                    TopAppBar(
-                        title = {
-                            Text(
-                                "Your Categories",
-                                style = MaterialTheme.typography.headlineSmall,
-                                color = MaterialTheme.colorScheme.onBackground
-                            )
-                        }
-                    )
+            Column {
+                when {
+                    selectedCategoryIds.isNotEmpty() -> {
+                        SelectionTopBar(
+                            selectedCount = selectedCategoryIds.size,
+                            onClose = { selectedCategoryIds = emptySet() },
+                            onDelete = { showDeleteDialog = true },
+                            onEdit = {
+                                if (selectedCategoryIds.size == 1)
+                                    onEditCategoryClick(selectedCategoryIds.first())
+                            }
+                        )
+                    }
+                    searchMode -> {
+                        CategoryListSearchTopBar(
+                            searchQuery = searchQuery,
+                            onQueryChange = { searchQuery = it },
+                            onBack = {
+                                searchMode = false
+                                searchQuery = ""
+                            }
+                        )
+                    }
+                    else -> {
+                        NormalTopBar(
+                            onSearchClick = { searchMode = true }
+                        )
+                    }
                 }
             }
         },
@@ -81,13 +112,16 @@ fun CategoryListScreen(
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
-            if (customCategories.isEmpty()) {
+            if (filteredCategories.isEmpty()) {
                 Box(
                     Modifier.fillMaxSize(),
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        "No categories yet.\nCreate your first category!",
+                        if (searchQuery.isNotBlank())
+                            "No categories found for \"$searchQuery\""
+                        else
+                            "No categories yet.\nCreate your first category!",
                         style = MaterialTheme.typography.bodyLarge,
                         color = MaterialTheme.colorScheme.onBackground,
                         textAlign = TextAlign.Center
@@ -100,7 +134,7 @@ fun CategoryListScreen(
                         .background(MaterialTheme.colorScheme.background),
                     contentPadding = PaddingValues(bottom = 90.dp)
                 ) {
-                    items(customCategories) { category ->
+                    items(filteredCategories) { category ->
                         val selected = selectedCategoryIds.contains(category.id)
                         CategoryListItem(
                             category = category,
@@ -167,7 +201,78 @@ fun CategoryListScreen(
     }
 }
 
-// Selection Mode TopBar with Edit
+// --- TopAppBars ---
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun NormalTopBar(
+    onSearchClick: () -> Unit
+) {
+    TopAppBar(
+        title = {
+            Text(
+                "Your Categories",
+                style = MaterialTheme.typography.headlineSmall,
+                color = MaterialTheme.colorScheme.onBackground
+            )
+        },
+        actions = {
+            IconButton(onClick = onSearchClick) {
+                Icon(
+                    Icons.Default.Search,
+                    contentDescription = "Search",
+                    tint = MaterialTheme.colorScheme.primary
+                )
+            }
+        }
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun CategoryListSearchTopBar(
+    searchQuery: String,
+    onQueryChange: (String) -> Unit,
+    onBack: () -> Unit
+) {
+    // This implementation matches the beautiful search bar from CategoryFilterScreen
+    Surface(
+        color = MaterialTheme.colorScheme.surface,
+        shadowElevation = 4.dp,
+        tonalElevation = 4.dp,
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .statusBarsPadding()
+                .padding(8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            IconButton(onClick = onBack, modifier = Modifier.padding(end = 4.dp)) {
+                Icon(Icons.Filled.ArrowBack, contentDescription = "Back")
+            }
+            OutlinedTextField(
+                value = searchQuery,
+                onValueChange = onQueryChange,
+                placeholder = { Text("Search categories...", style = MaterialTheme.typography.labelMedium) },
+                leadingIcon = { Icon(Icons.Default.Search, contentDescription = "Search") },
+                singleLine = true,
+                shape = MaterialTheme.shapes.large,
+                modifier = Modifier
+                    .weight(1f)
+                    .height(58.dp),
+                colors = TextFieldDefaults.colors(
+                    unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+                    focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+                    disabledContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+                    unfocusedIndicatorColor = Color.Transparent,
+                    focusedIndicatorColor = Color.Transparent,
+                )
+            )
+        }
+    }
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SelectionTopBar(
