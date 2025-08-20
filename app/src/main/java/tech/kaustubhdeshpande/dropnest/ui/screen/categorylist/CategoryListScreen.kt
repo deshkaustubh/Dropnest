@@ -1,7 +1,6 @@
 package tech.kaustubhdeshpande.dropnest.ui.screen.categorylist
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -10,6 +9,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.outlined.Folder
 import androidx.compose.material3.*
@@ -24,7 +24,6 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import tech.kaustubhdeshpande.dropnest.domain.model.Category
 import tech.kaustubhdeshpande.dropnest.ui.component.availableCategoryIcons
-import tech.kaustubhdeshpande.dropnest.ui.theme.DropnestTheme
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -33,6 +32,7 @@ import java.util.*
 fun CategoryListScreen(
     onCategoryClick: (String) -> Unit,
     onAddCategoryClick: () -> Unit,
+    onEditCategoryClick: (String) -> Unit,
     viewModel: CategoryListViewModel = hiltViewModel(),
     modifier: Modifier = Modifier
 ) {
@@ -54,7 +54,11 @@ fun CategoryListScreen(
                     SelectionTopBar(
                         selectedCount = selectedCategoryIds.size,
                         onClose = { selectedCategoryIds = emptySet() },
-                        onDelete = { showDeleteDialog = true }
+                        onDelete = { showDeleteDialog = true },
+                        onEdit = {
+                            if (selectedCategoryIds.size == 1)
+                                onEditCategoryClick(selectedCategoryIds.first())
+                        }
                     )
                 }
                 else -> {
@@ -163,13 +167,14 @@ fun CategoryListScreen(
     }
 }
 
-// Selection Mode TopBar
+// Selection Mode TopBar with Edit
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SelectionTopBar(
     selectedCount: Int,
     onClose: () -> Unit,
-    onDelete: () -> Unit
+    onDelete: () -> Unit,
+    onEdit: () -> Unit
 ) {
     TopAppBar(
         title = { Text("$selectedCount selected") },
@@ -179,6 +184,12 @@ fun SelectionTopBar(
             }
         },
         actions = {
+            IconButton(
+                onClick = onEdit,
+                enabled = selectedCount == 1 // Only enabled when one is selected
+            ) {
+                Icon(Icons.Default.Edit, contentDescription = "Edit")
+            }
             IconButton(onClick = onDelete) {
                 Icon(Icons.Default.Delete, contentDescription = "Delete")
             }

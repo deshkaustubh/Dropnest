@@ -19,16 +19,16 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import tech.kaustubhdeshpande.dropnest.ui.screen.category.CategoryDetailViewModel
 import tech.kaustubhdeshpande.dropnest.ui.screen.category.CreateCategoryScreen
 import tech.kaustubhdeshpande.dropnest.ui.screen.category.detail.CategoryDetailScreen
-import tech.kaustubhdeshpande.dropnest.ui.screen.category.CategoryDetailViewModel
 import tech.kaustubhdeshpande.dropnest.ui.screen.categoryfilter.CategoryFilterScreen
 import tech.kaustubhdeshpande.dropnest.ui.screen.categoryfilter.DropTabType
+import tech.kaustubhdeshpande.dropnest.ui.screen.categorylist.CategoryListScreen
 import tech.kaustubhdeshpande.dropnest.ui.screen.home.HomeScreen
 import tech.kaustubhdeshpande.dropnest.ui.screen.home.HomeViewModelImpl
-import tech.kaustubhdeshpande.dropnest.ui.screen.welcome.WelcomeScreen
-import tech.kaustubhdeshpande.dropnest.ui.screen.categorylist.CategoryListScreen
 import tech.kaustubhdeshpande.dropnest.ui.screen.settings.SettingsScreen
+import tech.kaustubhdeshpande.dropnest.ui.screen.welcome.WelcomeScreen
 
 private const val TAG = "DropNestNavHost"
 
@@ -113,10 +113,21 @@ fun DropNestNavHost(
                     // Pass innerPadding ONLY to the main content of the tab screens
                     CategoryListScreen(
                         onCategoryClick = { categoryId ->
-                            safeNavigation.navigateTo(DropNestDestination.CategoryDetail.createRoute(categoryId))
+                            safeNavigation.navigateTo(
+                                DropNestDestination.CategoryDetail.createRoute(
+                                    categoryId
+                                )
+                            )
                         },
                         onAddCategoryClick = {
                             safeNavigation.navigateTo(DropNestDestination.CreateCategory.route)
+                        },
+                        onEditCategoryClick = { categoryId ->
+                            navController.navigate(
+                                DropNestDestination.EditCategory.createRoute(
+                                    categoryId
+                                )
+                            )
                         },
 //                        modifier = Modifier.padding(innerPadding)
                     )
@@ -138,7 +149,11 @@ fun DropNestNavHost(
                             safeNavigation.navigateTo(DropNestDestination.CreateCategory.route)
                         },
                         onCategoryClick = { categoryId ->
-                            safeNavigation.navigateTo(DropNestDestination.CategoryDetail.createRoute(categoryId))
+                            safeNavigation.navigateTo(
+                                DropNestDestination.CategoryDetail.createRoute(
+                                    categoryId
+                                )
+                            )
                         },
                     )
                 }
@@ -211,7 +226,8 @@ fun DropNestNavHost(
                     popEnterTransition = { defaultWhatsAppPopEnter() },
                     popExitTransition = { defaultWhatsAppPopExit() }
                 ) { backStackEntry ->
-                    val categoryId = backStackEntry.arguments?.getString("categoryId") ?: return@composable
+                    val categoryId =
+                        backStackEntry.arguments?.getString("categoryId") ?: return@composable
                     val viewModel: CategoryDetailViewModel = hiltViewModel()
                     val uiState by viewModel.uiState.collectAsState()
 
@@ -225,7 +241,13 @@ fun DropNestNavHost(
                         drops = uiState.drops,
                         initialTab = DropTabType.Media,
                         onBackClick = { safeNavigation.popBackStack() },
-                        onDeleteDrops = { dropsToDelete -> dropsToDelete.forEach { viewModel.deleteDropById(it) } }
+                        onDeleteDrops = { dropsToDelete ->
+                            dropsToDelete.forEach {
+                                viewModel.deleteDropById(
+                                    it
+                                )
+                            }
+                        }
                     )
                 }
             }
