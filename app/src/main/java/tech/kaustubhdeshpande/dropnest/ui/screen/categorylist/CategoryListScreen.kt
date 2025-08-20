@@ -2,11 +2,15 @@ package tech.kaustubhdeshpande.dropnest.ui.screen.categorylist
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.outlined.Folder
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -16,7 +20,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import tech.kaustubhdeshpande.dropnest.domain.model.Category
@@ -40,17 +43,32 @@ fun CategoryListScreen(
         .filter { !it.isDefault }
         .sortedByDescending { it.timestamp }
 
+    // Selection mode state
+    var selectedCategoryIds by remember { mutableStateOf<Set<String>>(emptySet()) }
+    var showDeleteDialog by remember { mutableStateOf(false) }
+
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        "Your Categories",
-                        style = MaterialTheme.typography.headlineSmall,
-                        color = MaterialTheme.colorScheme.onBackground
+            when {
+                selectedCategoryIds.isNotEmpty() -> {
+                    SelectionTopBar(
+                        selectedCount = selectedCategoryIds.size,
+                        onClose = { selectedCategoryIds = emptySet() },
+                        onDelete = { showDeleteDialog = true }
                     )
                 }
-            )
+                else -> {
+                    TopAppBar(
+                        title = {
+                            Text(
+                                "Your Categories",
+                                style = MaterialTheme.typography.headlineSmall,
+                                color = MaterialTheme.colorScheme.onBackground
+                            )
+                        }
+                    )
+                }
+            }
         },
         containerColor = MaterialTheme.colorScheme.background
     ) { paddingValues ->
@@ -79,9 +97,22 @@ fun CategoryListScreen(
                     contentPadding = PaddingValues(bottom = 90.dp)
                 ) {
                     items(customCategories) { category ->
+                        val selected = selectedCategoryIds.contains(category.id)
                         CategoryListItem(
                             category = category,
-                            onClick = { onCategoryClick(category.id) }
+                            onClick = {
+                                if (selectedCategoryIds.isNotEmpty()) {
+                                    selectedCategoryIds =
+                                        if (selected) selectedCategoryIds - category.id
+                                        else selectedCategoryIds + category.id
+                                } else {
+                                    onCategoryClick(category.id)
+                                }
+                            },
+                            onLongClick = {
+                                selectedCategoryIds = setOf(category.id)
+                            },
+                            selected = selected
                         )
                     }
                 }
@@ -104,7 +135,58 @@ fun CategoryListScreen(
                 )
             }
         }
+
+        // Delete dialog
+        if (showDeleteDialog && selectedCategoryIds.isNotEmpty()) {
+            AlertDialog(
+                onDismissRequest = { showDeleteDialog = false },
+                confirmButton = {
+                    TextButton(onClick = {
+                        selectedCategoryIds.forEach { categoryId ->
+                            viewModel.deleteCategoryAndDrops(categoryId)
+                        }
+                        selectedCategoryIds = emptySet()
+                        showDeleteDialog = false
+                    }) {
+                        Text("Delete")
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showDeleteDialog = false }) {
+                        Text("Cancel")
+                    }
+                },
+                title = { Text("Delete Category?") },
+                text = { Text("Deleting this category will also delete all drops in it. This action cannot be undone. Are you sure?") }
+            )
+        }
     }
+}
+
+// Selection Mode TopBar
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun SelectionTopBar(
+    selectedCount: Int,
+    onClose: () -> Unit,
+    onDelete: () -> Unit
+) {
+    TopAppBar(
+        title = { Text("$selectedCount selected") },
+        navigationIcon = {
+            IconButton(onClick = onClose) {
+                Icon(Icons.Default.Close, contentDescription = "Close selection")
+            }
+        },
+        actions = {
+            IconButton(onClick = onDelete) {
+                Icon(Icons.Default.Delete, contentDescription = "Delete")
+            }
+            IconButton(onClick = { /* Overflow menu, empty for now */ }) {
+                Icon(Icons.Default.MoreVert, contentDescription = "More")
+            }
+        }
+    )
 }
 
 // Helper to get ImageVector from icon name in the emoji field (actually stores icon name)
@@ -116,22 +198,29 @@ fun getCategoryIconFromName(iconName: String): ImageVector {
 @Composable
 fun CategoryListItem(
     category: Category,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    onLongClick: () -> Unit,
+    selected: Boolean = false
 ) {
     val parsedColor = try {
         Color(android.graphics.Color.parseColor(category.colorHex))
     } catch (e: Exception) {
         MaterialTheme.colorScheme.primary
     }
+    val backgroundColor = if (selected) MaterialTheme.colorScheme.primary.copy(alpha = 0.18f)
+    else MaterialTheme.colorScheme.surface
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 12.dp, vertical = 8.dp)
             .background(
-                color = MaterialTheme.colorScheme.surface,
+                color = backgroundColor,
                 shape = MaterialTheme.shapes.medium
             )
-            .clickable(onClick = onClick)
+            .combinedClickable(
+                onClick = onClick,
+                onLongClick = onLongClick
+            )
             .padding(horizontal = 16.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {

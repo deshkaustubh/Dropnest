@@ -10,6 +10,7 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import tech.kaustubhdeshpande.dropnest.domain.model.Category
 import tech.kaustubhdeshpande.dropnest.domain.usecase.category.GetCategoriesUseCase
+import tech.kaustubhdeshpande.dropnest.domain.usecase.category.DeleteCategoryUseCase
 import javax.inject.Inject
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Folder
@@ -18,7 +19,8 @@ import tech.kaustubhdeshpande.dropnest.ui.component.availableCategoryIcons
 
 @HiltViewModel
 class CategoryListViewModel @Inject constructor(
-    private val getCategoriesUseCase: GetCategoriesUseCase
+    private val getCategoriesUseCase: GetCategoriesUseCase,
+    private val deleteCategoryUseCase: DeleteCategoryUseCase
 ) : ViewModel() {
 
     private val _categories = MutableStateFlow<List<Category>>(emptyList())
@@ -35,5 +37,14 @@ class CategoryListViewModel @Inject constructor(
     fun getCategoryIconByName(iconName: String): ImageVector {
         return availableCategoryIcons.find { it.contentDescription == iconName }?.icon
             ?: Icons.Outlined.Folder
+    }
+
+    /**
+     * Delete a category and its drops (cascading in DB).
+     */
+    fun deleteCategoryAndDrops(categoryId: String) {
+        viewModelScope.launch {
+            deleteCategoryUseCase(categoryId)
+        }
     }
 }
